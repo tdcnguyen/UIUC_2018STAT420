@@ -1,0 +1,18 @@
+---
+title: "UIUC, STAT 420, 2018 Summer, Group Project Proposal, Assessing Developments in the Search for a Second Earth"
+author: "Jerome JASINSKI (jeromej2@illinois.edu), Dongrong LI (dl12@illinois.edu), Thai Duy Cuong NGUYEN (thaidn2@illinois.edu)"
+date: '2018-07-17'
+output:
+  html_document: 
+    toc: yes
+  pdf_document: default
+urlcolor: cyan
+---
+
+## Dataset Description ##
+
+## Dataset Background ##
+
+## Statement of Interest ##
+
+## Using `R` ##
