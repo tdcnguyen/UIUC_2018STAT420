@@ -36,6 +36,8 @@ The NASA Exoplanet Archive is an online astronomical exoplanet and stellar catal
 A brief statement of the business, science, research, or personal interest you have in the dataset that you hope to explore.
 ---
 
+Are we alone in the Universe? This is one of the most profound questions that humankind has sought to answer since the beginning of recorded history. We can gain some insight into this mystery with the modern search for exoplanets. The underlying purpose of contemporary exoplanet programs is to discover habitable planets, especially around nearby stars, and find evidence of life elsewhere in the cosmos. Using Earth and its lifeforms as a template to assess habitility, we seek other celestial bodies with conditions similar to our own, i.e., with Earth-like surface gravities and temperatures capable to sustaining liquid water. In order to meet these criteria, most habitable worlds must be a particular mass and a particular distance from their host star. We are constantly trying to improve our detection sensitivity through advancements in technology and methods. It is the measurement of these developments that interest us for this Data Analysis Project.
+
 ## Using `R` ##
 
 ---
