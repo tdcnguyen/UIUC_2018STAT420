@@ -1,5 +1,5 @@
 ---
-title: "UIUC, STAT 420, 2018 Summer, Group Project Proposal, Assessing Developments in the Search for a Second Earth"
+title: "UIUC, STAT 420, 2018 Summer, Data Analysis Project Proposal, Assessing Developments in the Search for a Second Earth"
 author: "Jerome JASINSKI (jeromej2@illinois.edu), Dongrong LI (dl12@illinois.edu), Thai Duy Cuong NGUYEN (thaidn2@illinois.edu)"
 date: '2018-07-17'
 output:
@@ -11,8 +11,33 @@ urlcolor: cyan
 
 ## Dataset Description ##
 
+---
+Description of the dataset. You do not necessarily have to list all the variables, but at least mention those of greatest importance.
+After reading the proposal, a reader should have a good understanding of your dataset without needing to reference the data itself or other documentation.
+---
+
+The raw data we will be using for our Data Analysis Project consists of 354 attributes for 3,748 confirmed exoplanets and their host stars as well as information about their discovery as of 2018 July 5. Discovery information includes the method used to detect the exoplanet, the locale of the observatories used for detection (i.e., whether ground-based, space-based, or a mixture of both observations were used for detection), and the year of discovery. Physical characteristics of exoplanets present in the archive include planetary mass, orbital period, and orbital semi-major axis. Physical properties of host stars listed in the archive include stellar mass, stellar radius, effective temperature, surface gravity, spectral type, luminosity, and distance from Earth. These physical properties for both exoplanets and their host stars are important for determining the similarity between an exoplanet and Earth, and their detection sensitivity.
+
 ## Dataset Background ##
+
+---
+Background information on the dataset, including specific citation of its source.
+---
+
+The dataset we will be using for our Data Analysis Project is derived from the NASA Exoplanet Archive, which can be found at the following URL [https://exoplanetarchive.ipac.caltech.edu](https://exoplanetarchive.ipac.caltech.edu). This archive is an online compilation, collation, and cross-correlation of astronomical data and information on exoplanets and their host stars. The data are vetted by a team of astronomers at the California Institute of Technology (Caltech) under contract with the National Aeronautics and Space Administration (NASA) under the Exoplanet Exploration Program. An extensive overview of the data, services and tools of the archive can be found in a published paper by Akeson, et al. (2013, PASP, 125, 989) in the Publications of the Astronomical Society of the Pacific (PASP). This publication can be found at the following URL [http://adsabs.harvard.edu/abs/2013PASP..125..989A](http://adsabs.harvard.edu/abs/2013PASP..125..989A).
+
+---
+The NASA Exoplanet Archive is an online astronomical exoplanet and stellar catalog and data service that collates and cross-correlates astronomical data and information on exoplanets and their host stars, and provides tools to work with these data. The archive is dedicated to collecting and serving important public data sets involved in the search for and characterization of extrasolar planets and their host stars. These data include stellar parameters (such as positions, magnitudes, and temperatures), exoplanet parameters (such as masses and orbital parameters) and discovery/characterization data (such as published radial velocity curves, photometric light curves, images, and spectra).
+---
 
 ## Statement of Interest ##
 
+---
+A brief statement of the business, science, research, or personal interest you have in the dataset that you hope to explore.
+---
+
 ## Using `R` ##
+
+---
+Evidence that the data can be loaded into `R`. Load the data, and print the first few values of the response variable as evidence.
+---
