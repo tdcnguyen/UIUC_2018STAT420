@@ -43,3 +43,9 @@ Are we alone in the Universe? This is one of the most profound questions that hu
 ---
 Evidence that the data can be loaded into `R`. Load the data, and print the first few values of the response variable as evidence.
 ---
+
+```{r}
+planets = read.csv("planets_body_updated.csv")
+head(planets$pl_massj[complete.cases(planets$pl_massj)])
+```
+
