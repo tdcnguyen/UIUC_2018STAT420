@@ -148,6 +148,9 @@ $(document).ready(function () {
 </div>
 <div id="using-r" class="section level2">
 <h2>Using <code>R</code></h2>
+<pre class="r"><code>planets = read.csv(&quot;planets_body_updated.csv&quot;)
+head(planets$pl_massj[complete.cases(planets$pl_massj)])</code></pre>
+<pre><code>## [1] 14.74  4.66  1.78  8.00 24.50 13.90</code></pre>
 </div>
 
 
