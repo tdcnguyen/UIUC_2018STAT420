@@ -149,8 +149,14 @@ $(document).ready(function () {
 <div id="using-r" class="section level2">
 <h2>Using <code>R</code></h2>
 <p>We have trimmed the original dataset from the NASA Exoplanet Archive to 37 attributes that are most relevant and directly related to habitable planets. These data are stored in the file <code>planets_lite.csv</code>. The variables for which we are interested as responses are <code>pl_bmasse</code>, <code>pl_orbsmax</code> and <code>st_dist</code> are the planet mass in Earth masses (<span class="math inline">\(R_\odot = 5.9722 \times 10^{24}\,\rm{kg}\)</span>), the planet orbital semi-major axis in astronomical units (<span class="math inline">\(\rm{AU} = 1.495978707 \times 10^{11}\,\rm{m}\)</span>), and the distance from our solar system to the exoplanet system in parsecs (<span class="math inline">\(\rm{pc} = 3.0857 \times 10^{16}\,\rm{m}\)</span>).</p>
+<p>The first few values of the response variables of interest are provided below.</p>
 <pre class="r"><code>planets = read.csv(&quot;planets_lite.csv&quot;)
-#head(planets$pl_masse[complete.cases(planets$pl_masse)])</code></pre>
+head(planets$pl_bmasse[complete.cases(planets$pl_bmasse)])</code></pre>
+<pre><code>## [1] 6165.6000 4684.8142 1525.5000 1481.0878  565.7374 3273.5000</code></pre>
+<pre class="r"><code>head(planets$pl_orbsmax[complete.cases(planets$pl_orbsmax)])</code></pre>
+<pre><code>## [1] 1.29 1.53 0.83 2.93 1.66 2.60</code></pre>
+<pre class="r"><code>head(planets$st_dist[complete.cases(planets$st_dist)])</code></pre>
+<pre><code>## [1] 110.62 119.47  76.39  18.15  21.41  73.10</code></pre>
 </div>
 
 
