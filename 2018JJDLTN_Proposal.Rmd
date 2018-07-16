@@ -43,3 +43,14 @@ Are we alone in the Universe? This is one of the most profound questions that hu
 ---
 Evidence that the data can be loaded into `R`. Load the data, and print the first few values of the response variable as evidence.
 ---
+
+We have trimmed the original dataset from the NASA Exoplanet Archive to 37 attributes that are most relevant and directly related to habitable planets. These data are stored in the file `planets_lite.csv`. The variables for which we are interested as responses are `pl_bmasse`, `pl_orbsmax` and `st_dist` are the planet mass in Earth masses ($R_\odot = 5.9722 \times 10^{24}\,\rm{kg}$), the planet orbital semi-major axis in astronomical units ($\rm{AU} = 1.495978707 \times 10^{11}\,\rm{m}$), and the distance from our solar system to the exoplanet system in parsecs ($\rm{pc} = 3.0857 \times 10^{16}\,\rm{m}$).
+
+The first few values of the response variables of interest are provided below.
+
+```{r}
+planets = read.csv("planets_lite.csv")
+head(planets$pl_bmasse[complete.cases(planets$pl_bmasse)])
+head(planets$pl_orbsmax[complete.cases(planets$pl_orbsmax)])
+head(planets$st_dist[complete.cases(planets$st_dist)])
+```
