@@ -1,5 +1,5 @@
 ---
-title: "UIUC, STAT 420, 2018 Summer, Data Analysis Project Proposal, Assessing Developments in the Search for a Second Earth"
+title: "UIUC, STAT 420, 2018 Summer, Data Analysis Project Proposal, Assessing Developments in the Search for Another Earth"
 author: "Jerome JASINSKI (jeromej2@illinois.edu), Dongrong LI (dl12@illinois.edu), Thai Duy Cuong NGUYEN (thaidn2@illinois.edu)"
 date: '2018-07-17'
 output:
@@ -24,7 +24,7 @@ The raw data we will be using for our Data Analysis Project consists of 354 attr
 Background information on the dataset, including specific citation of its source.
 ---
 
-The dataset we will be using for our Data Analysis Project is derived from the NASA Exoplanet Archive, which can be found at the following URL [https://exoplanetarchive.ipac.caltech.edu](https://exoplanetarchive.ipac.caltech.edu). This archive is an online compilation, collation, and cross-correlation of astronomical data and information on exoplanets and their host stars. The data are vetted by a team of astronomers at the California Institute of Technology (Caltech) under contract with the National Aeronautics and Space Administration (NASA) under the Exoplanet Exploration Program. An extensive overview of the data, services and tools of the archive can be found in a published paper by Akeson, et al. (2013, PASP, 125, 989) in the Publications of the Astronomical Society of the Pacific (PASP). This publication can be found at the following URL [http://adsabs.harvard.edu/abs/2013PASP..125..989A](http://adsabs.harvard.edu/abs/2013PASP..125..989A).
+The dataset we will be using for our Data Analysis Project is derived from the NASA Exoplanet Archive, which can be found at the following URL [https://exoplanetarchive.ipac.caltech.edu](https://exoplanetarchive.ipac.caltech.edu). This archive is an online compilation, collation, and cross-correlation of astronomical data and information on exoplanets and their host stars. The data are vetted by a team of astronomers at the California Institute of Technology (Caltech) under contract with the National Aeronautics and Space Administration (NASA) under the Exoplanet Exploration Program. An extensive overview of the data, services and tools of the archive can be found in a published paper by Akeson, et al. (2013, PASP, 125, 989) in the Publications of the Astronomical Society of the Pacific (PASP). This publication can be found [here](http://adsabs.harvard.edu/abs/2013PASP..125..989A).
 
 ## Statement of Interest ##
 
@@ -40,7 +40,7 @@ Are we alone in the Universe? This is one of the most profound questions that hu
 Evidence that the data can be loaded into `R`. Load the data, and print the first few values of the response variable as evidence.
 ---
 
-We have trimmed the original dataset from the NASA Exoplanet Archive to 37 attributes that are most relevant and directly related to habitable planets. These data are stored in the file `planets_lite.csv`. The variables for which we are interested as responses are `pl_bmasse`, `pl_orbsmax` and `st_dist` are the planet mass in Earth masses ($R_\odot = 5.9722 \times 10^{24}\,\rm{kg}$), the planet orbital semi-major axis in astronomical units ($\rm{AU} = 1.495978707 \times 10^{11}\,\rm{m}$), and the distance from our solar system to the exoplanet system in parsecs ($\rm{pc} = 3.0857 \times 10^{16}\,\rm{m}$).
+We have trimmed the original dataset from the NASA Exoplanet Archive to 37 attributes that are most relevant and directly related to habitable planets. These data are stored in the file `planets_lite.csv`. The variables for which we are interested as responses are `pl_bmasse`, `pl_orbsmax` and `st_dist` are the planet mass in Earth masses ($R_\odot = 5.9722 \times 10^{24}\,\rm{kg}$), the planet orbital semi-major axis in astronomical units ($\rm{AU} = 1.495978707 \times 10^{11}\,\rm{m}$), and the distance from our solar system to the exoplanet system in parsecs ($\rm{pc} = 3.0857 \times 10^{16}\,\rm{m}$). These response variables are key physical parameters that determine the habitability of a planet.
 
 The first few values of the response variables of interest are provided below.
 
