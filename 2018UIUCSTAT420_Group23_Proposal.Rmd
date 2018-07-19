@@ -1,5 +1,5 @@
 ---
-title: "UIUC, STAT 420, 2018 Summer, Data Analysis Project Proposal, Assessing Developments in the Search for Another Earth"
+title: "UIUC, STAT 420, 2018 Summer, Group 23, Data Analysis Project Proposal, Assessing Developments in the Search for Another Earth"
 author: "Jerome JASINSKI (jeromej2@illinois.edu), Dongrong LI (dl12@illinois.edu), Thai Duy Cuong NGUYEN (thaidn2@illinois.edu)"
 date: '2018-07-17'
 output:
