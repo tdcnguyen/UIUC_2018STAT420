@@ -1,0 +1,197 @@
+---
+title: "STAT420-Final-Proj"
+author: "Dongrong Li"
+date: '2018-07-29'
+output:
+  html_document: 
+    toc: yes
+  pdf_document: default
+urlcolor: cyan
+---
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+options(scipen = 1, digits = 4, width = 100, fig.align = "center")
+```
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(faraway)
+library(broom)
+library(lmtest)
+```
+
+
+## Methods
+The dataset consists of 354 attributes for 3,748 records, and 15 related attributes are selected for modeling.  
+```{r}
+planets = read.csv("planets_lite_ns.csv")
+
+#To cleanse data by removing NAs:
+planets_good_idx = complete.cases(planets$st_dist, planets$st_optmag, planets$st_teff, 
+                                  planets$st_mass, planets$st_rad, planets$st_logg, 
+                                  planets$st_metfe, planets$st_vsini, planets$pl_orbsmax, 
+                                  planets$pl_orbeccen, planets$pl_bmasse, planets$pl_orbper)
+
+planets_good = planets[planets_good_idx, c("pl_bmasse", "pl_discmethod", "pl_disc", "pl_locale", "st_dist", "st_optmag", "st_teff", "st_mass", "st_rad", "st_logg", "st_metfe", "st_vsini", "pl_orbsmax", "pl_orbeccen", "pl_orbper")]
+
+```
+
+In order to check constant variance assumption, we are using Fitted versus Residuals Plot and Breusch-Pagan test. To assess the normality of errors, we are using normal quantile-quantile (Q-Q) plot and Shapiro–Wilk test. Here are the functions for the Breusch-Pagan test and Shapiro–Wilk test.
+```{r message=FALSE, warning=FALSE}
+get_bp_decision = function(model, alpha) {
+  decide = unname(round(bptest(model)$p.value, 2) < alpha)
+  list(BP_Test = unname(round(bptest(model)$p.value, 2)), 
+       Decision = ifelse(decide, "Reject", "Fail to Reject"))
+}
+
+get_sw_decision = function(model, alpha) {
+  decide = unname(round(shapiro.test(resid(model))$p.value, 2) < alpha)
+  list(SW_Test = round(shapiro.test(resid(model))$p.value, 2), 
+       Decision = ifelse(decide, "Reject", "Fail to Reject"))
+}
+
+```
+
+To validate the models by detecting the overfitting issue, we are using the leave-one-out cross-validated (LOOCV) RMSE, which is written as 
+
+\[
+\text{RMSE}_{\text{LOOCV}} = \sqrt{\frac{1}{n}\sum_{i=1}^n \left(\frac{e_{i}}{1-h_{i}}\right)^2},
+\]
+
+where $h_i$ are the leverages and $e_i$ are the usual residuals. Here we create a specific function for the LOOCV RMSE that will be useful for our model fitting strategy.
+```{r}
+get_loocv_rmse = function(model) {
+  sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
+}
+```
+
+
+## Results
+
+Below are the scatterplots between pairs of variables in the dataset. We can notice that log-st_rad and st_logg are highly correlated.The second pair with high correlation is log-pl_orbsmax and log-pl_orbper.
+```{r, fig.height=13, fig.width=13}
+#To see correlations in plot
+planets_transf = data.frame(pl_bmasse = log(planets_good$pl_bmasse),
+                            pl_discmethod = planets_good$pl_discmethod,
+                            pl_disc = planets_good$pl_disc,
+                            pl_locale = planets_good$pl_locale,
+                            st_dist = log(planets_good$st_dist),
+                            st_optmag = planets_good$st_optmag,
+                            st_teff = log(planets_good$st_teff),
+                            st_mass = log(planets_good$st_mass),
+                            st_rad = log(planets_good$st_rad),
+                            st_logg = planets_good$st_logg,
+                            st_metfe = exp(planets_good$st_metfe),
+                            st_vsini = planets_good$st_vsini,
+                            pl_orbsmax = log(planets_good$pl_orbsmax),
+                            pl_orbeccen = planets_good$pl_orbeccen,
+                            pl_orbper = log(planets_good$pl_orbper) )
+pairs(planets_transf, col = "dodgerblue")
+```
+
+
+Here we fit an additive model with log-pl_bmasse as the response and the remaining variables in the cleansed dataset as predictors.
+```{r}
+#Fit an additive model with all predictors:
+md_mass_add = lm(log(pl_bmasse) ~ pl_discmethod + pl_disc + pl_locale + log(st_dist) + st_optmag + exp(st_metfe) + log(st_teff) + log(st_mass) + log(st_rad) + st_logg + st_vsini + log(pl_orbsmax) + pl_orbeccen + log(pl_orbper), data = planets_good)
+summary(md_mass_add)
+```
+F-test for the regression tells us that the regression is significant, however not all predictors are. 
+
+According to the Variance Inflation Factor (VIF) result, there is a huge multicollinearity issue as many of the predictors (e.g. st_optmag and log-pl_orbper) have a VIF greater than 5.
+```{r}
+vif(md_mass_add)
+```
+
+Let's use backward AIC search first. According to the summary results of the AIC selected model, 12 predictors were selected, F test shows the regression is significant, and the adjusted $R^2$ is 0.544.
+```{r}
+#Backward AIC search on the MLR fit  
+md_mass_aic = step(md_mass_add, direction = "backward", trace = 0)
+summary(md_mass_aic)
+```
+
+Here we use backward BIC search to select predictors. According to the summary results of the selected model, 10 predictors were selected and all are significant, and the adjusted $R^2$ is 0.542.
+```{r}
+#Backward BIC search on the MLR fit  
+md_mass_bic = step(md_mass_add, direction = "backward", k = log(length(resid(md_mass_add))), trace = 0)
+summary(md_mass_bic)
+```
+
+We then use stepwise search to select predictors. According to the summary results of the selected model, 11 predictors were selected, F test shows the regression is significant, and the adjusted $R^2$ is 0.543.
+```{r}
+#Stepwise search on the MLR fit 
+md_start = lm(log(pl_bmasse) ~ 1, data = planets_good)
+md_mass_both = step(md_start,
+                    scope = log(pl_bmasse) ~ pl_discmethod + pl_disc + pl_locale + log(st_dist) + st_optmag + exp(st_metfe) + log(st_teff) + log(st_mass) + log(st_rad) + st_logg + st_vsini + log(pl_orbsmax) + pl_orbeccen + log(pl_orbper),
+                    direction = "both",
+                    trace = 0)
+summary(md_mass_both)
+```
+
+Here we build a model by introducing all possible two-way interactions, as well as each of the first order term, and then use stepwise selection procedure to select the predictors.
+```{r}
+#Adding two-way interactions
+#md_mass_inter = lm(log(pl_bmasse) ~ (pl_discmethod + pl_disc + pl_locale + log(st_dist) + log(st_mass) + log(st_rad) + st_vsini + pl_orbeccen + log(pl_orbper))^2, data = planets_good)
+md_mass_inter = step(md_start, 
+                     scope = log(pl_bmasse) ~ pl_discmethod + pl_disc + pl_locale + log(st_dist) + st_optmag + log(st_mass) + log(st_rad) + exp(st_metfe) + st_vsini + pl_orbeccen + log(pl_orbper) + pl_locale:pl_orbeccen + log(st_mass):st_vsini +  pl_locale:log(st_dist) + log(st_dist):st_vsini + log(st_dist):log(pl_orbper) + st_vsini:log(pl_orbper) + pl_orbeccen:log(pl_orbper) + log(st_rad): st_logg, 
+                     direction = "both", 
+                     trace = 0)
+
+summary(md_mass_inter)
+```
+
+
+
+Based on the adjusted $R^2$, LOOCV RMSE results and the number of predictors, among the selected models without interaction added, we prefer the stepwise model even though the results are very close. If we need to select the most accurate model based the adjusted $R^2$ results, the selected interaction model is the one to pick.
+```{r}
+diagonostic = data.frame(
+              Adj_R2 = c(summary(md_mass_add)$adj,
+                         summary(md_mass_aic)$adj,
+                         summary(md_mass_bic)$adj,
+                         summary(md_mass_both)$adj,
+                         summary(md_mass_inter)$adj),
+              LOOCV_RMSE = c(get_loocv_rmse(md_mass_add),
+                             get_loocv_rmse(md_mass_aic),
+                             get_loocv_rmse(md_mass_bic),
+                             get_loocv_rmse(md_mass_both),
+                             get_loocv_rmse(md_mass_inter)),
+              Par_Cnt = c(length(coef(md_mass_add)) - 1,
+                          length(coef(md_mass_aic)) - 1,
+                          length(coef(md_mass_bic)) - 1,
+                          length(coef(md_mass_both)) - 1,
+                          length(coef(md_mass_inter)) - 1))
+rownames(diagonostic) = c("Additive Model", "Backward AIC Model", "Backward BIC Model", "Stepwise Model", "Interaction Model")
+colnames(diagonostic) = c("Adjusted R^2", "LOOCV RMSE", "# of Predictors")
+knitr::kable(diagonostic)
+
+```
+
+Below are the diagnostic results of the preferred model. According to both Fitted versus Residuals plot and Breusch-Pagan test, we see a small p-value, so we reject the null of homoscedasticity. 
+
+```{r}
+# fitted versus residuals
+plot(fitted(md_mass_inter), resid(md_mass_inter), 
+     col = "grey", pch = 20, cex = 1.5, 
+     xlab = "Fitted", ylab = "Residuals", 
+     main = "Fitted versus Residuals")
+abline(h = 0, col = "dodgerblue", lwd = 2)
+grid()
+```
+
+```{r}
+get_bp_decision(md_mass_inter, alpha = 0.01)
+```
+
+From the Q-Q plot and the Shapiro–Wilk test, we would believe the errors follow a normal distribution.
+```{r}
+# qq-plot
+qqnorm(resid(md_mass_inter), col = "grey", pch = 20, cex = 1.5)
+qqline(resid(md_mass_inter), col = "dodgerblue", lwd = 2)
+grid()
+```
+
+```{r}
+get_sw_decision(md_mass_inter, alpha = 0.01)
+```
+
+
+## Conclusion
