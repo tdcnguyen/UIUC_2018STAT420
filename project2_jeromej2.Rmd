@@ -1,0 +1,219 @@
+---
+title: "Project2"
+author: "jeromej2"
+date: "7/29/2018"
+output:
+  html_document: default
+  pdf_document: default
+---
+```{r, echo=FALSE, warning=FALSE}
+options(scipen = 1, digits = 4, width = 80, fig.alin = "center")
+library(lmtest)
+library(knitr)
+library(nortest)
+library(ggplot2)
+library(readr)
+library(leaps)
+op = function(x, d=4) sprintf(paste0("%1.",d,"f"), x) 
+diagnostics <- function(model, 
+                        pcol = "grey", 
+                        lcol = "dodgerblue", 
+                        alpha = 0.05, 
+                        plotit = TRUE, 
+                        testit = TRUE){
+  if (plotit){
+    par(mfrow = c(1,2), oma=c(2,0,2,0))
+    plot(fitted(model), resid(model), col = pcol, pch = 20,
+         xlab = paste("Fitted Values, BP: ", op(bptest(model)$statistic), sep = " "),
+         ylab = "Residual Values", 
+         main = paste("Fitted vs. Residuals for\n", deparse(substitute(model)), sep = ""))
+    abline(h = 0, lwd = 2, col = lcol)
+    
+    qqnorm(resid(model), col = pcol, pch = 20, main = "Q-Q plot")
+    qqline(resid(model), lty = 2, lwd = 2, col = lcol)
+  }
+  if (testit){
+    retframe <- list(p_val = shapiro.test(resid(model))$p.val, 
+                           decision = ifelse(shapiro.test(resid(model))$p.val > alpha, 
+                                             "Fail to Reject", 
+                                             "Reject"))
+    retframe
+  }
+}
+
+```
+
+
+
+```{r setup, echo=FALSE, warning=FALSE}
+
+planets <- read_csv("planets_lite_ns.csv")
+cols_used <- c("pl_discmethod", "pl_disc", "pl_locale", "st_dist", "st_optmag", "st_teff", "st_mass", 
+                 "st_rad", "st_logg", "st_metfe", "st_vsini", "pl_orbsmax", "pl_orbeccen", "pl_bmasse")
+
+planets_used <- planets[,cols_used]
+planets_used_graph <- planets_used
+
+factor_cols <- c("pl_discmethod", "pl_disc", "pl_locale")
+planets_used[factor_cols] <- lapply(planets_used[factor_cols], factor)
+
+planets_good_idx = complete.cases(planets_used)
+planets_good = planets_used[planets_good_idx,]
+
+planets_good <- planets_good[planets_good$pl_disc != 1989,]
+
+op = function(x, d=4) sprintf(paste0("%1.",d,"f"), x) 
+diagnostics <- function(model, 
+                        pcol = "grey", 
+                        lcol = "dodgerblue", 
+                        alpha = 0.05, 
+                        plotit = TRUE, 
+                        testit = TRUE){
+  if (plotit){
+    par(mfrow = c(1,2), oma=c(2,0,2,0))
+    plot(fitted(model), resid(model), col = pcol, pch = 20,
+         xlab = paste("Fitted Values, BP: ", op(bptest(model)$statistic), sep = " "),
+         ylab = "Residual Values", 
+         main = paste("Fitted vs. Residuals for\n", deparse(substitute(model)), sep = ""))
+    abline(h = 0, lwd = 2, col = lcol)
+    
+    qqnorm(resid(model), col = pcol, pch = 20, main = "Q-Q plot")
+    qqline(resid(model), lty = 2, lwd = 2, col = lcol)
+  }
+  if (testit){
+    retframe <- list(p_val = shapiro.test(resid(model))$p.val, 
+                           decision = ifelse(shapiro.test(resid(model))$p.val > alpha, 
+                                             "Fail to Reject", 
+                                             "Reject"))
+    retframe
+  }
+}
+
+calc_loocv_rmse = function(model) {
+sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
+}
+
+```
+
+## Model selection
+I wanted to see if the advances in exoplanetary discovery were getting more accurate in regards to predicting the orbit of extra-solar bodies. Are we getting better in finding panets in the *'Goldilocks Zone'*? Could we find a second home?
+
+The model selection started with a full base fit of the Orbital semi-Major axis as the response and the selected parameters as predictors. Looking at the pairs plot, we can see a few obviously logarithmic relationships between predictors, but for completeness, I started with a simple additive model. I took this model and ran both AIC and BIC to see if we could improve the $R^{2}$. The base model run under backwards BIC returned the best additive model, but the $R^{2}$ was less than 30%.
+
+Next I tried a log transformation on the response, and three of the predictors, I used $e^{predictor}$ of the predictors already in log space, and one interactive term of $log(Stellar Radius * e^{Stellar Surface Gravity})$, as these terms showed high Collinearity and strong Variance Inflation on the base model. The log fit showed promise, so I used both backwards and forwards AIC to see if a better model could be had. In the end of those tests, the original log fit worked out the best.
+
+To verify the fit adhered to normal variance and homoscedacity in the residuals, I ran the shapiro test, and failed to reject the Null hypothesis. The bp test was close, so I plotted a histogram of the residuals and ovelayed a normal curve over for illustration. Although it wasn't perfectly normal, it was very close. I then ran a LOOCV test on the model and got a cross validated root mean squared error of *1.099*, as opposed to base BIC model of *1.268*. There were no outstanding variation inflation factors on this model, and the model itself gave us an adjusted $R^{2}$ of *60.0%*, with a very low p-value.
+
+Lastly, I created a 90% confidence interval for predictions grouped by year. I dropped the one observation from 1989 as I didn't want only one point to overly influence the predictions. I then created a mean confidence interval per year, and plotted the time series. Although not flawless, there appears to be a downward trend in confidence span, inferring that we may be getting more proficient in the discovery of new planets on other systems.
+
+
+## Methods
+
+```{r}
+pairs(planets_good)
+
+```
+
+```{r ModelSelection, echo = FALSE }
+
+base <- lm(pl_orbsmax ~ ., data = planets_good)
+
+base_aic <- step(base, data = planets_good, trace = FALSE)
+
+base_bic <- step(base, data = planets_good, k = log(length(base$residuals)),  trace = FALSE)
+
+log_base <- lm(log(pl_orbsmax) ~ pl_discmethod  + log(st_dist) + log(st_teff) + 
+                 log(I(st_rad * exp(st_logg))) + exp(st_metfe) + 
+                 st_vsini + exp(pl_orbeccen) + log(pl_bmasse), 
+               data = planets_good)
+
+
+log_base_aic_b <- step(log_base, data = planets_good, trace = FALSE)
+
+start <- lm(log(pl_orbsmax) ~ 1, data = planets_good)
+log_base_aic_f <- step(start, 
+                       scope = log(pl_orbsmax) ~ pl_discmethod  + log(st_dist) + log(st_teff) +
+                         log(I(st_rad * exp(st_logg))) + exp(st_metfe) + 
+                         st_vsini + exp(pl_orbeccen) + log(pl_bmasse),
+                       direction = 'forward', trace = FALSE)
+
+```
+
+```{r Testing Output}
+
+anova(base,base_aic)
+anova(base,base_bic)
+summary(base_bic)
+calc_loocv_rmse(base_bic)
+car::vif(base)
+anova(log_base, log_base_aic_b)
+anova(log_base, log_base_aic_f)
+
+car::vif(log_base)
+summary(log_base)
+calc_loocv_rmse(log_base)
+
+best_fit <- log_base
+
+```
+
+## Final Plots
+
+```{r plots}
+ggplot(planets_good) + 
+  geom_point(aes(x=pl_orbsmax, y=exp(best_fit$fitted.values), color = pl_disc)) + 
+  geom_abline(slope = 1,
+              intercept = 0,
+              col = 'steelblue') + 
+  xlab("Real Values") + 
+  ylab("Predicted Values") + 
+  ggtitle("Predicted vs. Actual Orbital Semi-Major Axis")
+
+diagnostics(best_fit, pcol = 'steelblue', lcol = 'darkorange')
+
+
+ggplot() + aes(resid(best_fit)) + 
+  geom_histogram(aes(y = ..density..), 
+                 binwidth=.35, 
+                 colour="steelblue", 
+                 fill="dark orange") +
+  ggtitle("Histogram of Best Fit Residuals\nWith Normal Curve") +
+  xlab("Residuals") + 
+  ylab("Density") + 
+  stat_function(fun=dnorm,
+                         color="black",
+                         args=list(mean=mean(resid(best_fit)), 
+                                   sd=sd(resid(best_fit))))
+
+```
+
+## Confidence intervals By Year (pl_disc)
+
+```{r}
+
+years <- sort(unique(planets_good$pl_disc))
+#as.numeric(years)
+yearly_predict_range <- data.frame(year = rep(0,length(years)), 
+                             span = rep(0,length(years)))
+
+for (i in seq(1:length(years))){
+  temp_pred <- exp(predict(best_fit, 
+                           newdata = planets_good[planets_good$pl_disc == as.character(years[i]),], 
+                           interval = "confidence", 
+                           level = 0.90))
+  yearly_predict_range[i,] <- c(as.character(years[i]), 
+                          mean(temp_pred[,3]) - mean(temp_pred[,2]))
+}
+
+
+ggplot(yearly_predict_range, aes(x=as.Date(year, "%Y"), y=as.numeric(span))) + 
+  geom_point(col = 'steelblue') + 
+  xlab("Discovery Year") + 
+  ylab("Mean 90% Confidence Interval") + 
+  ggtitle("Discovery Efficiency By Year") + 
+  theme(axis.text.x = element_text(angle=45)) + 
+  geom_smooth(method = "lm", se = FALSE,
+              col = 'darkorange')
+
+```
+
