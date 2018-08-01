@@ -104,8 +104,6 @@ Next I tried a log transformation on the response, and three of the predictors, 
 
 To verify the fit adhered to normal variance and homoscedacity in the residuals, I ran the shapiro test, and failed to reject the Null hypothesis. The bp test was close, so I plotted a histogram of the residuals and ovelayed a normal curve over for illustration. Although it wasn't perfectly normal, it was very close. I then ran a LOOCV test on the model and got a cross validated root mean squared error of *1.099*, as opposed to base BIC model of *1.268*. There were no outstanding variation inflation factors on this model, and the model itself gave us an adjusted $R^{2}$ of *60.0%*, with a very low p-value.
 
-Lastly, I created a 90% confidence interval for predictions grouped by year. I dropped the one observation from 1989 as I didn't want only one point to overly influence the predictions. I then created a mean confidence interval per year, and plotted the time series. Although not flawless, there appears to be a downward trend in confidence span, inferring that we may be getting more proficient in the discovery of new planets on other systems.
-
 
 ## Methods
 
@@ -185,35 +183,17 @@ ggplot() + aes(resid(best_fit)) +
                          args=list(mean=mean(resid(best_fit)), 
                                    sd=sd(resid(best_fit))))
 
-```
 
-## Confidence intervals By Year (pl_disc)
-
-```{r}
-
-years <- sort(unique(planets_good$pl_disc))
-#as.numeric(years)
-yearly_predict_range <- data.frame(year = rep(0,length(years)), 
-                             span = rep(0,length(years)))
-
-for (i in seq(1:length(years))){
-  temp_pred <- exp(predict(best_fit, 
-                           newdata = planets_good[planets_good$pl_disc == as.character(years[i]),], 
-                           interval = "confidence", 
-                           level = 0.90))
-  yearly_predict_range[i,] <- c(as.character(years[i]), 
-                          mean(temp_pred[,3]) - mean(temp_pred[,2]))
-}
-
-
-ggplot(yearly_predict_range, aes(x=as.Date(year, "%Y"), y=as.numeric(span))) + 
-  geom_point(col = 'steelblue') + 
-  xlab("Discovery Year") + 
-  ylab("Mean 90% Confidence Interval") + 
-  ggtitle("Discovery Efficiency By Year") + 
+ggplot(data = planets_good, aes(x = pl_disc, y = log(pl_orbsmax))) +
+  geom_boxplot(fill = "dark orange",alpha = 0.7) + 
+  ggtitle("Semi-Major Axis by Year") +
+  xlab("Year") +
+  ylab("pl_orbsmax") +
   theme(axis.text.x = element_text(angle=45)) + 
-  geom_smooth(method = "lm", se = FALSE,
-              col = 'darkorange')
+  scale_fill_manual(values = c('steelblue', 'dark orange'))
+
 
 ```
+
+
 
