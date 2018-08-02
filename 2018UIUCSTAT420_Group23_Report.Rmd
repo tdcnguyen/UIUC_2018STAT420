@@ -387,11 +387,31 @@ We prefer models where assumptions of homoscedasticity and normality are not sus
 
 ## Discussion ##
 
+The `R` summary for the model we have chosen to examine the orbital semi-major axis of exoplanets is given below.
+
+```{r}
+summary(log_pl_orbsmax_mod_exh_back_bic)
+```
+
 The model we have chosen to predict the (logarithm of) planet orbital semi-major axis is an additive model with four predictors which are the locale of discovery, the stellar apparent magnitude, the stellar projected rotational velocity, and the logarithm of planet mass.
 
 ## Appendix ##
 
+The following code lists helper `R` functions that calculate or retrieve statistical values and report statistical decisions.
+
 ```{r, eval = FALSE}
+get_adj_r2 = function(model) {
+  summary(model)$adj.r.squared
+}
+
+get_loocv_rmse = function(model) {
+  sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
+}
+
+get_num_params = function(model) {
+  length(coef(model))
+}
+
 get_bp_decision = function(model, alpha) {
   decide = unname(bptest(model)$p.value < alpha)
   ifelse(decide, "Reject", "Fail to Reject")
@@ -401,19 +421,9 @@ get_sw_decision = function(model, alpha) {
   decide = unname(shapiro.test(resid(model))$p.value < alpha)
   ifelse(decide, "Reject", "Fail to Reject")
 }
-
-get_num_params = function(model) {
-  length(coef(model))
-}
-
-get_loocv_rmse = function(model) {
-  sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
-}
-
-get_adj_r2 = function(model) {
-  summary(model)$adj.r.squared
-}
 ```
+
+The following code is the multi-nested loop used to generate strings that were parsed and evaluated by `R` to fit a collection models in the exhaustive model search.
 
 ```{r, eval = FALSE}
 lm_str_head <- "cur_mod=lm(log(pl_orbsmax)~"
