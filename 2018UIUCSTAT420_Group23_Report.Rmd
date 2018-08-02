@@ -17,7 +17,7 @@ For our investigation, we used data from the NASA Exoplanet Archive, which can b
 
 We downloaded our dataset from the NASA Exoplanet Archive on 2018 July 5. The data consists of 354 columns and 3,748 rows of information on confirmed exoplanets and their host stars as well as information about their discovery. Discovery information includes the method used to detect the exoplanet, the locale of the observatories used for detection (i.e., whether ground-based, space-based, or a mixture of both observations were used for detection), and the year of discovery. Physical characteristics of exoplanets present in the archive include planetary mass, orbital period, and orbital semi-major axis. Physical properties of host stars listed in the archive include stellar mass, stellar radius, effective temperature, surface gravity, spectral type, luminosity, and distance from Earth. These physical properties for both exoplanets and their host stars are important for determining the similarity between an exoplanet and Earth, and their detection sensitivity.
 
-We trimmed and removed space characters from the original dataset from the NASA Exoplanet Archive to the 15 columns that are most relevant and directly related to habitable planets. These data are stored in the file `planets.csv`. The variables for which we are interested as responses are `pl_bmasse`, `pl_orbsmax` and `st_dist` are the planet mass in Earth masses ($R_\odot = 5.9722 \times 10^{24}\,\rm{kg}$), the planet orbital semi-major axis in astronomical units ($\rm{AU} = 1.495978707 \times 10^{11}\,\rm{m}$), and the distance from our solar system to the exoplanet system in parsecs ($\rm{pc} = 3.0857 \times 10^{16}\,\rm{m}$). These response variables are key physical parameters that determine the habitability of a planet and the potential feasibility of reaching such a planet.
+We trimmed and removed space characters from the original dataset from the NASA Exoplanet Archive to the 15 columns that are most relevant and directly related to habitable planets. These data are stored in the file `planets.csv`. The variable for which we are most interested as a response for this study is `pl_orbsmax`, the planet orbital semi-major axis in astronomical units ($\rm{AU} = 1.495978707 \times 10^{11}\,\rm{m}$). This response variable is a key physical parameter that determines the habitability of a planet.
 
 ## Methods ##
 
@@ -68,8 +68,7 @@ var_table <- data.frame(variable_names = c("`pl_discmethod`",
                                                   "Planet orbital period (days)",
                                                   "Planet orbital semi-major axis (AU)",
                                                   "Planet orbital eccentricity",
-                                                  "Planet mass (Earth masses)")
-)
+                                                  "Planet mass (Earth masses)"))
 knitr::kable(var_table,
              "markdown",
              row.names = FALSE,
@@ -337,10 +336,29 @@ log_pl_orbsmax_mod_exh_back_bic_sw <- shapiro.test(resid(log_pl_orbsmax_mod_exh_
 
 The *p-value* from the Shapiro-Wilk test for the model is $`r log_pl_orbsmax_mod_exh_back_bic_sw$p.value`$. For an often used significance level of $\alpha = 0.01$, this *p-value* of $`r log_pl_orbsmax_mod_exh_back_bic_sw$p.value` \gt \alpha$. This suggests that normality is not suspect.
 
+We will look at the variance inflation factor (VIF) to examine collinearity in our model variables. The following table lists the predictors in our model and its corresponding VIF.
+
+```{r, echo = FALSE, message = FALSE}
+log_pl_orbsmax_mod_exh_back_bic_vif <- car::vif(log_pl_orbsmax_mod_exh_back_bic)
+vif_table <- data.frame(variable_names = c("`pl_locale`",
+                                           "`st_optmag`",
+                                           "`st_vsini`",
+                                           "`log(pl_bmasse)`"),
+                        vif_values = unname(log_pl_orbsmax_mod_exh_back_bic_vif))
+knitr::kable(vif_table,
+             "markdown",
+             row.names = FALSE,
+             col.names = c("Variable name", "VIF"),
+             align = c('l', 'r'))
+
+```
+
+None of the model variables has a VIF greater than five, so we do not suspect any significant collinearity in our model.
+
 ### Model comparison ###
 
-```{r}
-mod_table = data.frame(model_names = c("Additive Model",
+```{r, echo = FALSE}
+mod_table <- data.frame(model_names = c("Additive Model",
                                        "Backward BIC Model",
                                        "Logarithmic Additive Model",
                                        "Logarithmic Backward BIC Model",
@@ -394,6 +412,16 @@ summary(log_pl_orbsmax_mod_exh_back_bic)
 ```
 
 The model we have chosen to predict the (logarithm of) planet orbital semi-major axis is an additive model with four predictors which are the locale of discovery, the stellar apparent magnitude, the stellar projected rotational velocity, and the logarithm of planet mass.
+
+The coefficient for the locale of discovery is `r log_pl_orbsmax_mod_exh_back_bic$coefficients[2]`. This means that exoplanets discovered using space-based observations are generally found to be further from their host stars than those discovered using ground-based observations by a factor of `r exp(log_pl_orbsmax_mod_exh_back_bic$coefficients[2])`. Most space-based exoplanet discoveries were made using the Kepler space observatory ([https://exoplanetarchive.ipac.caltech.edu/docs/counts_detail.html](https://exoplanetarchive.ipac.caltech.edu/docs/counts_detail.html)). Kepler uses the transit search method to find exoplanets which is theoretically more sensitive to planets with wide orbits than is the radial velocity method which is the other major method for planet detection.
+
+The coefficient for stellar apparent magnitude is `r log_pl_orbsmax_mod_exh_back_bic$coefficients[3]`. This indicates that exoplanets with tighter orbits tend to be found around stars with higher apparent magnitude, and vice versa, i.e., exoplanets with wider orbits tend to be found around stars with lower apparent magnitude. The apparent magnitude of a star is a measure of its brightness as seen by an observer on Earth. Stellar magnitude is an inverse relation, i.e., the brighter an object appears, the lower its magnitude value and vice versa. Therefore, exoplanets with small orbits are more often found around faint stars as observed from Earth. This is not unexpected since the signal from faint stars has higher noise than from bright stars, and planets close-in to their host star are intrinsically more likely to be detected by the two most common techniques of planet detection, radial velocity method and transit search, than those farther from their host star.
+
+The coefficient for stellar projected rotational velocity is `r log_pl_orbsmax_mod_exh_back_bic$coefficients[4]`. For every unit increase in projected rotational velocity, there is a slight decrease in the orbital semi-major axis of a confirmed exoplanet. In other words, one is more likely to find an exoplanet in a tight orbit around a rapidly rotating star, and in a wide orbit around a slowly rotating star. This effect could come from observational bias. The radial velocity method for finding exoplanets relies on tracking spectral features from starlight, and stellar rotation broadens these features and making them less trackable. As mentioned previously, the radial velocity method is also more sensitive to planets in tighter orbits, so the radial velocity indicators from planets orbiting tightly around a rapidly rotating star are more likely to accurately observed than wider orbiting counterparts.
+
+The coefficient of (the logarithm of) planet mass is `r log_pl_orbsmax_mod_exh_back_bic$coefficients[5]`. This means that more massive planets tend to be found orbiting farther from their host star than their less massive counterparts. This planet mass-orbit relation scales as a power law with an exponent of `r log_pl_orbsmax_mod_exh_back_bic$coefficients[5]` (the corresonding coefficient in our model). This result could be physical, observational, or both. The massive gas giant planets in our solar system have wider orbits than the small terrestrial planets. Massive planets are more detectable than less massive planets, and the two most common methods for finding exoplanets, radial velocity method and transit search, are more sensitive to planets in closer orbits.
+
+Our model is useful by highlighting the significant difference in planet discoveries made from space and those made on the ground. Our model can also be used to estimate the detection limits of finding planets around faint stars and rapidly rotating stars. Ideally, we would like to discover an Earth-mass exoplanet orbiting its host star at a distance where liquid water could exist and support life. The planet mass-orbit relation derived from our analysis of confirmed exoplanets could help to tell us how close we are or how much improvement we must make in our planet searches in order to discovery another Earth.
 
 ## Appendix ##
 
