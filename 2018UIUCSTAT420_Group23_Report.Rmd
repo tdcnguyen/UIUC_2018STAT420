@@ -289,7 +289,105 @@ We will use this model to gain some insight into the orbital semi-major axes of 
 
 ## Results ##
 
+The `R` summary for the model we have chosen to examine the orbital semi-major axis of exoplanets is given below.
+
+```{r}
+summary(log_pl_orbsmax_mod_exh_back_bic)
+```
+
+### Model diagnostics ###
+
+We will check the constant variance assumption for our final model using a residual versus fitted values plot, and using a Breusch-Pagan test.
+
+```{r, echo = FALSE, fig.width = 12, fig.height = 12}
+plot(fitted(log_pl_orbsmax_mod_exh_back_bic),
+     resid(log_pl_orbsmax_mod_exh_back_bic),
+     main = "Residuals vs. Fitted values",
+     xlab = "Fitted values",
+     ylab = "Residual values",
+     col = "dodgerblue")
+abline(h = 0, col = "orange", lwd = 2)
+```
+
+By visual inspection, the general span of residuals is mostly constant across the range of fitted values although many of the datapoints are clustered in two areas.
+
+Next, we will perform the Breusch-Pagan test on the model.
+
+```{r, message = FALSE}
+library(lmtest)
+log_pl_orbsmax_mod_exh_back_bic_bp <- bptest(log_pl_orbsmax_mod_exh_back_bic)
+```
+
+The *p-value* from the Breusch-Pagan test for the model is $`r log_pl_orbsmax_mod_exh_back_bic_bp$p.value`$. For an often used significance level of $\alpha = 0.01$, this *p-value* of $`r log_pl_orbsmax_mod_back_bic_bp$p.value` \gt \alpha$. This suggests that homoscedasticity is not suspect.
+
+We will check the normality assumption for our model using a Q-Q plot, and using a Shapiro-Wilk test.
+
+```{r, echo = FALSE, fig.width = 12, fig.height = 12}
+qqnorm(resid(log_pl_orbsmax_mod_exh_back_bic), main = "Normal Q-Q Plot", col = "dodgerblue")
+qqline(resid(log_pl_orbsmax_mod_exh_back_bic), col = "orange", lwd = 2)
+```
+
+By visual inspection, the data seems to consistent with normality.
+
+Next, we will perform the Shapiro-Wilk test on the model.
+
+```{r}
+log_pl_orbsmax_mod_exh_back_bic_sw <- shapiro.test(resid(log_pl_orbsmax_mod_exh_back_bic))
+```
+
+The *p-value* from the Shapiro-Wilk test for the model is $`r log_pl_orbsmax_mod_exh_back_bic_sw$p.value`$. For an often used significance level of $\alpha = 0.01$, this *p-value* of $`r log_pl_orbsmax_mod_exh_back_bic_sw$p.value` \gt \alpha$. This suggests that normality is not suspect.
+
+### Model comparison ###
+
+```{r}
+mod_table = data.frame(model_names = c("Additive Model",
+                                       "Backward BIC Model",
+                                       "Logarithmic Additive Model",
+                                       "Logarithmic Backward BIC Model",
+                                       "Logarithmic Exhaustive Model",
+                                       "Logarithmic Exhaustive Backward BIC Model"),
+                       adj_r2 = c(summary(pl_orbsmax_mod_add)$adj.r.squared,
+                                  summary(pl_orbsmax_mod_back_bic)$adj.r.squared,
+                                  summary(log_pl_orbsmax_mod_add)$adj.r.squared,
+                                  summary(log_pl_orbsmax_mod_back_bic)$adj.r.squared,
+                                  summary(log_pl_orbsmax_mod_exh)$adj.r.squared,
+                                  summary(log_pl_orbsmax_mod_exh_back_bic)$adj.r.squared),
+                       loocv_rmse = c(get_loocv_rmse(pl_orbsmax_mod_add),
+                                      get_loocv_rmse(pl_orbsmax_mod_back_bic),
+                                      get_loocv_rmse(log_pl_orbsmax_mod_add),
+                                      get_loocv_rmse(log_pl_orbsmax_mod_back_bic),
+                                      get_loocv_rmse(log_pl_orbsmax_mod_exh),
+                                      get_loocv_rmse(log_pl_orbsmax_mod_exh_back_bic)),
+                       bp = c(get_bp_decision(pl_orbsmax_mod_add, 0.01),
+                              get_bp_decision(pl_orbsmax_mod_back_bic, 0.01),
+                              get_bp_decision(log_pl_orbsmax_mod_add, 0.01),
+                              get_bp_decision(log_pl_orbsmax_mod_back_bic, 0.01),
+                              get_bp_decision(log_pl_orbsmax_mod_exh, 0.01),
+                              get_bp_decision(log_pl_orbsmax_mod_exh_back_bic, 0.01)),
+                       sw = c(get_sw_decision(pl_orbsmax_mod_add, 0.01),
+                              get_sw_decision(pl_orbsmax_mod_back_bic, 0.01),
+                              get_sw_decision(log_pl_orbsmax_mod_add, 0.01),
+                              get_sw_decision(log_pl_orbsmax_mod_back_bic, 0.01),
+                              get_sw_decision(log_pl_orbsmax_mod_exh, 0.01),
+                              get_sw_decision(log_pl_orbsmax_mod_exh_back_bic, 0.01)),
+                       num_params = c(get_num_params(pl_orbsmax_mod_add) - 1,
+                                      get_num_params(pl_orbsmax_mod_back_bic) - 1,
+                                      get_num_params(log_pl_orbsmax_mod_add) - 1,
+                                      get_num_params(log_pl_orbsmax_mod_back_bic) - 1,
+                                      get_num_params(log_pl_orbsmax_mod_exh) - 1,
+                                      get_num_params(log_pl_orbsmax_mod_exh_back_bic) - 1))
+knitr::kable(mod_table,
+             "markdown",
+             row.names = FALSE,
+             col.names = c("Model", "Adjusted $R^2$", "LOOCV RMSE", "Breusch-Pagan test decision", "Shapiro-Wilks test decision", "# of Predictors"),
+             align = c('l', 'l', 'l', 'l', 'l', 'l'))
+```
+
+We prefer models where assumptions of homoscedasticity and normality are not suspect. While the logarithmic additive and logarithmic backward BIC models had larger adjusted $R^2$ values and lower LOOCV-RMSE values, the Breusch-Pagan and Shapiro-Wilks tests results would reject the hypothesis of constant variance and normality, respectively. The logarithmic exhaustive backward BIC model has comparable adjusted $R^2$ and LOOCV-RMSE values and with only four predictors compared to eight predictors for its counterpart without applying a backward BIC search.
+
 ## Discussion ##
+
+The model we have chosen to predict the (logarithm of) planet orbital semi-major axis is an additive model with four predictors which are the locale of discovery, the stellar apparent magnitude, the stellar projected rotational velocity, and the logarithm of planet mass.
 
 ## Appendix ##
 
