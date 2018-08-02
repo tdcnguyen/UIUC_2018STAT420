@@ -2,12 +2,16 @@
 title: "UIUC, STAT 420, 2018 Summer, Group 23, Data Analysis Project Report, Assessing Developments in the Search for Another Earth"
 author: "Jerome JASINSKI (jeromej2@illinois.edu), Dongrong LI (dl12@illinois.edu), Thai Duy Cuong NGUYEN (thaidn2@illinois.edu)"
 date: '2018-08-03'
-output: 
-html_document: 
-toc: yes
-pdf_document: default
+output:
+  html_document: 
+    toc: yes
+  pdf_document: default
 urlcolor: cyan
 ---
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+options(scipen = 1, digits = 4, width = 100, fig.align = "center")
+```
 
 ## Introduction ##
 
@@ -120,9 +124,11 @@ For this `log(pl_orbsmax)` model, the adjusted $R^2$ of `r summary(log_pl_orbsma
 
 ### Preliminary model diagnostics ###
 
+#### Assumption of homoscedasticity ####
+
 We will check the constant variance assumption for our latest model using a residual versus fitted values plot, and using a Breusch-Pagan test.
 
-```{r, echo = FALSE, fig.width = 12, fig.height = 12}
+```{r, echo = FALSE, fig.width = 12, fig.height = 8}
 plot(fitted(log_pl_orbsmax_mod_back_bic),
      resid(log_pl_orbsmax_mod_back_bic),
      main = "Residuals vs. Fitted values",
@@ -143,9 +149,11 @@ log_pl_orbsmax_mod_back_bic_bp <- bptest(log_pl_orbsmax_mod_back_bic)
 
 The *p-value* from the Breusch-Pagan test for the model is $`r log_pl_orbsmax_mod_back_bic_bp$p.value`$. For an often used significance level of $\alpha = 0.01$, this *p-value* of $`r log_pl_orbsmax_mod_back_bic_bp$p.value` \ll \alpha$. This further suggests that homoscedasticity is suspect.
 
+#### Assumption of normality ####
+
 We will check the normality assumption for our model using a Q-Q plot, and using a Shapiro-Wilk test.
 
-```{r, echo = FALSE, fig.width = 12, fig.height = 12}
+```{r, echo = FALSE, fig.width = 12, fig.height = 8}
 qqnorm(resid(log_pl_orbsmax_mod_back_bic), main = "Normal Q-Q Plot", col = "dodgerblue")
 qqline(resid(log_pl_orbsmax_mod_back_bic), col = "orange", lwd = 2)
 ```
@@ -162,12 +170,12 @@ The *p-value* from the Shapiro-Wilk test for the model is $`r log_pl_orbsmax_mod
 
 ### Exhaustive model search ###
 
-While we could continue to tweak the model with transformations on the predictors or vary model search approaches like direction (e.g., forward or stepwise) or quality estimator (e.g., AIC) to obtain homoscedasticity and normality, we can also try an exhaustive model search. An exhaustive search that is not too large could allow us to systematically try mutually exclusive combinations of linear and logarithm transformations of the predictors.
+While we could continue to tweak the model with transformations on the predictors or vary model search approaches like direction (e.g., forward or stepwise) or quality estimator (e.g., AIC) to obtain homoscedasticity and normality, we can also try an exhaustive model search. An exhaustive search that is not too large could allow us to systematically try mutually exclusive combinations of linear, logarithmic and exponential transformations of the predictors. For our predictors, there would be 209,952 combinations of models.
 
 We will first setup the storage for the results of the exhaustive model search.
 
 ```{r}
-n <- (2^8) * (3^5)
+n <- (2^5) * (3^8)
 loocv_rmse_results <- rep(0, n)
 adj_r2_results <- rep(0, n)
 bp_value_results <- rep(0, n)
@@ -186,12 +194,12 @@ for (ipl_discmethod in c("1", "pl_discmethod")) {
   for (ipl_disc in c("1", "pl_disc")) {
     for (ipl_locale in c("1", "pl_locale")) {
       for (ist_dist in c("1", "st_dist", "log(st_dist)")) {
-        for (ist_optmag in c("1", "st_optmag")) {
+        for (ist_optmag in c("1", "st_optmag", "exp(st_optmag)")) {
           for (ist_teff in c("1", "st_teff", "log(st_teff)")) {
             for (ist_mass in c("1", "st_mass", "log(st_mass)")) {
               for (ist_rad in c("1", "st_rad", "log(st_rad)")) {
-                for (ist_logg in c("1", "st_logg")) {
-                  for (ist_metfe in c("1", "st_metfe")) {
+                for (ist_logg in c("1", "st_logg", "exp(st_logg)")) {
+                  for (ist_metfe in c("1", "st_metfe", "exp(st_metfe)")) {
                     for (ist_vsini in c("1", "st_vsini")) {
                       for (ipl_orbeccen in c("1", "pl_orbeccen")) {
                         for (ipl_bmasse in c("1", "pl_bmasse", "log(pl_bmasse)")) {
@@ -271,7 +279,7 @@ idx <- (bp_value_results > 0.01) & (sw_value_results > 0.01) & (adj_r2_results >
 
 There are `r sum(idx)` models where we fail to reject the hypothesis of homoscedasticity and normality for a significance level of $\alpha = 0.01$.
 
-Of those models, we could choose the model with the lowest LOOCV-RMSE.
+Of those models, we could choose the model with the lowest leave-one-out cross-validation root mean square (LOOCV-RMSE) value, which could be used to check for overfitting. Overfitting can be implied by an increase in LOOCV-RMSE with an increase in model complexity.
 
 ```{r}
 eval(parse(text = paste("log_pl_orbsmax_mod_exh = lm(log(pl_orbsmax)~", lm_str[which(idx)[which.min(loocv_rmse_results[which(idx)])]], lm_str_tail)))
@@ -296,9 +304,11 @@ summary(log_pl_orbsmax_mod_exh_back_bic)
 
 ### Model diagnostics ###
 
+#### Assumption of homoscedasticity ####
+
 We will check the constant variance assumption for our final model using a residual versus fitted values plot, and using a Breusch-Pagan test.
 
-```{r, echo = FALSE, fig.width = 12, fig.height = 12}
+```{r, echo = FALSE, fig.width = 12, fig.height = 8}
 plot(fitted(log_pl_orbsmax_mod_exh_back_bic),
      resid(log_pl_orbsmax_mod_exh_back_bic),
      main = "Residuals vs. Fitted values",
@@ -317,11 +327,13 @@ library(lmtest)
 log_pl_orbsmax_mod_exh_back_bic_bp <- bptest(log_pl_orbsmax_mod_exh_back_bic)
 ```
 
-The *p-value* from the Breusch-Pagan test for the model is $`r log_pl_orbsmax_mod_exh_back_bic_bp$p.value`$. For an often used significance level of $\alpha = 0.01$, this *p-value* of $`r log_pl_orbsmax_mod_back_bic_bp$p.value` \gt \alpha$. This suggests that homoscedasticity is not suspect.
+The *p-value* from the Breusch-Pagan test for the model is $`r log_pl_orbsmax_mod_exh_back_bic_bp$p.value`$. For an often used significance level of $\alpha = 0.01$, this *p-value* of $`r log_pl_orbsmax_mod_exh_back_bic_bp$p.value` \gt \alpha$. This suggests that homoscedasticity is not suspect.
+
+#### Assumption of normality ####
 
 We will check the normality assumption for our model using a Q-Q plot, and using a Shapiro-Wilk test.
 
-```{r, echo = FALSE, fig.width = 12, fig.height = 12}
+```{r, echo = FALSE, fig.width = 12, fig.height = 8}
 qqnorm(resid(log_pl_orbsmax_mod_exh_back_bic), main = "Normal Q-Q Plot", col = "dodgerblue")
 qqline(resid(log_pl_orbsmax_mod_exh_back_bic), col = "orange", lwd = 2)
 ```
@@ -336,7 +348,23 @@ log_pl_orbsmax_mod_exh_back_bic_sw <- shapiro.test(resid(log_pl_orbsmax_mod_exh_
 
 The *p-value* from the Shapiro-Wilk test for the model is $`r log_pl_orbsmax_mod_exh_back_bic_sw$p.value`$. For an often used significance level of $\alpha = 0.01$, this *p-value* of $`r log_pl_orbsmax_mod_exh_back_bic_sw$p.value` \gt \alpha$. This suggests that normality is not suspect.
 
-We will look at the variance inflation factor (VIF) to examine collinearity in our model variables. The following table lists the predictors in our model and its corresponding VIF.
+#### Outlier diagnostics ####
+
+We will see how influential points affect the coefficients. Here, we define influential points as those with a Cook's distance larger than four divided by the number of points. We will remove the influential points and refit the model.
+
+```{r}
+cd_log_pl_orbsmax_mod_exh_back_bic = cooks.distance(log_pl_orbsmax_mod_exh_back_bic)
+log_pl_orbsmax_mod_exh_back_bic_fix = lm(log_pl_orbsmax_mod_exh_back_bic, data = planets_good, subset = cd_log_pl_orbsmax_mod_exh_back_bic <= 4 / length(cd_log_pl_orbsmax_mod_exh_back_bic))
+summary(log_pl_orbsmax_mod_exh_back_bic_fix)
+```
+
+Overall, the coefficients of the model fit with the influential points removed is similar to those of the model fit with the influential points included. The adjusted $R^2$ for the model without influential points is somewhat higher with a value of `r summary(log_pl_orbsmax_mod_exh_back_bic_fix)$adj.r.squared`.
+
+Doing a Breusch-Pagan test on the model fit without influential points, we see that the *p-value* from the test is $`r bptest(log_pl_orbsmax_mod_exh_back_bic_fix)$p.value`$. For an often used significance level of $\alpha = 0.01$, this *p-value* of $`r bptest(log_pl_orbsmax_mod_exh_back_bic_fix)$p.value` \lt \alpha$. This suggests that homoscedasticity is suspect. Therefore, we will continue to use the model derived from data with the influential points.
+
+#### Collinearity diagnostics ####
+
+Next, we will look at the variance inflation factor (VIF) to examine collinearity in our model variables. The following table lists the predictors in our model and its corresponding VIF.
 
 ```{r, echo = FALSE, message = FALSE}
 log_pl_orbsmax_mod_exh_back_bic_vif <- car::vif(log_pl_orbsmax_mod_exh_back_bic)
@@ -359,41 +387,47 @@ None of the model variables has a VIF greater than five, so we do not suspect an
 
 ```{r, echo = FALSE}
 mod_table <- data.frame(model_names = c("Additive Model",
-                                       "Backward BIC Model",
-                                       "Logarithmic Additive Model",
-                                       "Logarithmic Backward BIC Model",
-                                       "Logarithmic Exhaustive Model",
-                                       "Logarithmic Exhaustive Backward BIC Model"),
-                       adj_r2 = c(summary(pl_orbsmax_mod_add)$adj.r.squared,
-                                  summary(pl_orbsmax_mod_back_bic)$adj.r.squared,
-                                  summary(log_pl_orbsmax_mod_add)$adj.r.squared,
-                                  summary(log_pl_orbsmax_mod_back_bic)$adj.r.squared,
-                                  summary(log_pl_orbsmax_mod_exh)$adj.r.squared,
-                                  summary(log_pl_orbsmax_mod_exh_back_bic)$adj.r.squared),
-                       loocv_rmse = c(get_loocv_rmse(pl_orbsmax_mod_add),
-                                      get_loocv_rmse(pl_orbsmax_mod_back_bic),
-                                      get_loocv_rmse(log_pl_orbsmax_mod_add),
-                                      get_loocv_rmse(log_pl_orbsmax_mod_back_bic),
-                                      get_loocv_rmse(log_pl_orbsmax_mod_exh),
-                                      get_loocv_rmse(log_pl_orbsmax_mod_exh_back_bic)),
-                       bp = c(get_bp_decision(pl_orbsmax_mod_add, 0.01),
-                              get_bp_decision(pl_orbsmax_mod_back_bic, 0.01),
-                              get_bp_decision(log_pl_orbsmax_mod_add, 0.01),
-                              get_bp_decision(log_pl_orbsmax_mod_back_bic, 0.01),
-                              get_bp_decision(log_pl_orbsmax_mod_exh, 0.01),
-                              get_bp_decision(log_pl_orbsmax_mod_exh_back_bic, 0.01)),
-                       sw = c(get_sw_decision(pl_orbsmax_mod_add, 0.01),
-                              get_sw_decision(pl_orbsmax_mod_back_bic, 0.01),
-                              get_sw_decision(log_pl_orbsmax_mod_add, 0.01),
-                              get_sw_decision(log_pl_orbsmax_mod_back_bic, 0.01),
-                              get_sw_decision(log_pl_orbsmax_mod_exh, 0.01),
-                              get_sw_decision(log_pl_orbsmax_mod_exh_back_bic, 0.01)),
-                       num_params = c(get_num_params(pl_orbsmax_mod_add) - 1,
-                                      get_num_params(pl_orbsmax_mod_back_bic) - 1,
-                                      get_num_params(log_pl_orbsmax_mod_add) - 1,
-                                      get_num_params(log_pl_orbsmax_mod_back_bic) - 1,
-                                      get_num_params(log_pl_orbsmax_mod_exh) - 1,
-                                      get_num_params(log_pl_orbsmax_mod_exh_back_bic) - 1))
+                                        "Backward BIC Model",
+                                        "Logarithmic Additive Model",
+                                        "Logarithmic Backward BIC Model",
+                                        "Logarithmic Exhaustive Model",
+                                        "Logarithmic Exhaustive Backward BIC Model",
+                                        "Logarithmic Exhaustive Backward BIC Model without Influential Points"),
+                        adj_r2 = c(summary(pl_orbsmax_mod_add)$adj.r.squared,
+                                   summary(pl_orbsmax_mod_back_bic)$adj.r.squared,
+                                   summary(log_pl_orbsmax_mod_add)$adj.r.squared,
+                                   summary(log_pl_orbsmax_mod_back_bic)$adj.r.squared,
+                                   summary(log_pl_orbsmax_mod_exh)$adj.r.squared,
+                                   summary(log_pl_orbsmax_mod_exh_back_bic)$adj.r.squared,
+                                   summary(log_pl_orbsmax_mod_exh_back_bic_fix)$adj.r.squared),
+                        loocv_rmse = c(get_loocv_rmse(pl_orbsmax_mod_add),
+                                       get_loocv_rmse(pl_orbsmax_mod_back_bic),
+                                       get_loocv_rmse(log_pl_orbsmax_mod_add),
+                                       get_loocv_rmse(log_pl_orbsmax_mod_back_bic),
+                                       get_loocv_rmse(log_pl_orbsmax_mod_exh),
+                                       get_loocv_rmse(log_pl_orbsmax_mod_exh_back_bic),
+                                       get_loocv_rmse(log_pl_orbsmax_mod_exh_back_bic_fix)),
+                        bp = c(get_bp_decision(pl_orbsmax_mod_add, 0.01),
+                               get_bp_decision(pl_orbsmax_mod_back_bic, 0.01),
+                               get_bp_decision(log_pl_orbsmax_mod_add, 0.01),
+                               get_bp_decision(log_pl_orbsmax_mod_back_bic, 0.01),
+                               get_bp_decision(log_pl_orbsmax_mod_exh, 0.01),
+                               get_bp_decision(log_pl_orbsmax_mod_exh_back_bic, 0.01),
+                               get_bp_decision(log_pl_orbsmax_mod_exh_back_bic_fix, 0.01)),
+                        sw = c(get_sw_decision(pl_orbsmax_mod_add, 0.01),
+                               get_sw_decision(pl_orbsmax_mod_back_bic, 0.01),
+                               get_sw_decision(log_pl_orbsmax_mod_add, 0.01),
+                               get_sw_decision(log_pl_orbsmax_mod_back_bic, 0.01),
+                               get_sw_decision(log_pl_orbsmax_mod_exh, 0.01),
+                               get_sw_decision(log_pl_orbsmax_mod_exh_back_bic, 0.01),
+                               get_sw_decision(log_pl_orbsmax_mod_exh_back_bic_fix, 0.01)),
+                        num_params = c(get_num_params(pl_orbsmax_mod_add) - 1,
+                                       get_num_params(pl_orbsmax_mod_back_bic) - 1,
+                                       get_num_params(log_pl_orbsmax_mod_add) - 1,
+                                       get_num_params(log_pl_orbsmax_mod_back_bic) - 1,
+                                       get_num_params(log_pl_orbsmax_mod_exh) - 1,
+                                       get_num_params(log_pl_orbsmax_mod_exh_back_bic) - 1,
+                                       get_num_params(log_pl_orbsmax_mod_exh_back_bic_fix) - 1))
 knitr::kable(mod_table,
              "markdown",
              row.names = FALSE,
@@ -401,7 +435,7 @@ knitr::kable(mod_table,
              align = c('l', 'l', 'l', 'l', 'l', 'l'))
 ```
 
-We prefer models where assumptions of homoscedasticity and normality are not suspect. While the logarithmic additive and logarithmic backward BIC models had larger adjusted $R^2$ values and lower LOOCV-RMSE values, the Breusch-Pagan and Shapiro-Wilks tests results would reject the hypothesis of constant variance and normality, respectively. The logarithmic exhaustive backward BIC model has comparable adjusted $R^2$ and LOOCV-RMSE values and with only four predictors compared to eight predictors for its counterpart without applying a backward BIC search.
+We prefer models where assumptions of homoscedasticity and normality are not suspect. While the logarithmic additive and logarithmic backward BIC models had larger adjusted $R^2$ values and lower LOOCV-RMSE values, the Breusch-Pagan and Shapiro-Wilks tests results would reject the hypothesis of constant variance and normality, respectively. The logarithmic exhaustive backward BIC model has comparable adjusted $R^2$ and LOOCV-RMSE values and with only four predictors compared to eight predictors for its counterpart without applying a backward BIC search. Finally, we would choose the logarithmic exhaustive backward BIC model with influential points over its counterpart without influential points because the assumption of constant variance is suspect for the latter.
 
 ## Discussion ##
 
@@ -462,12 +496,12 @@ for (ipl_discmethod in c("1", "pl_discmethod")) {
   for (ipl_disc in c("1", "pl_disc")) {
     for (ipl_locale in c("1", "pl_locale")) {
       for (ist_dist in c("1", "st_dist", "log(st_dist)")) {
-        for (ist_optmag in c("1", "st_optmag")) {
+        for (ist_optmag in c("1", "st_optmag", "exp(st_optmag)")) {
           for (ist_teff in c("1", "st_teff", "log(st_teff)")) {
             for (ist_mass in c("1", "st_mass", "log(st_mass)")) {
               for (ist_rad in c("1", "st_rad", "log(st_rad)")) {
-                for (ist_logg in c("1", "st_logg")) {
-                  for (ist_metfe in c("1", "st_metfe")) {
+                for (ist_logg in c("1", "st_logg", "exp(st_logg)")) {
+                  for (ist_metfe in c("1", "st_metfe", "exp(st_metfe)")) {
                     for (ist_vsini in c("1", "st_vsini")) {
                       for (ipl_orbeccen in c("1", "pl_orbeccen")) {
                         for (ipl_bmasse in c("1", "pl_bmasse", "log(pl_bmasse)")) {
