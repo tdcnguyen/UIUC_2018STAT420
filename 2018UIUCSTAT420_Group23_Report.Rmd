@@ -226,25 +226,25 @@ for (ipl_discmethod in c("1", "pl_discmethod")) {
 ```
 
 ```{r, echo = FALSE}
-get_bp_decision = function(model, alpha) {
+get_bp_decision <- function(model, alpha) {
   decide = unname(bptest(model)$p.value < alpha)
   ifelse(decide, "Reject", "Fail to Reject")
 }
 
-get_sw_decision = function(model, alpha) {
+get_sw_decision <- function(model, alpha) {
   decide = unname(shapiro.test(resid(model))$p.value < alpha)
   ifelse(decide, "Reject", "Fail to Reject")
 }
 
-get_num_params = function(model) {
+get_num_params <- function(model) {
   length(coef(model))
 }
 
-get_loocv_rmse = function(model) {
+get_loocv_rmse <- function(model) {
   sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
 }
 
-get_adj_r2 = function(model) {
+get_adj_r2 <- function(model) {
   summary(model)$adj.r.squared
 }
 ```
@@ -428,24 +428,24 @@ Our model is useful by highlighting the significant difference in planet discove
 The following code lists helper `R` functions that calculate or retrieve statistical values and report statistical decisions.
 
 ```{r, eval = FALSE}
-get_adj_r2 = function(model) {
+get_adj_r2 <- function(model) {
   summary(model)$adj.r.squared
 }
 
-get_loocv_rmse = function(model) {
+get_loocv_rmse <- function(model) {
   sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
 }
 
-get_num_params = function(model) {
+get_num_params <- function(model) {
   length(coef(model))
 }
 
-get_bp_decision = function(model, alpha) {
+get_bp_decision <- function(model, alpha) {
   decide = unname(bptest(model)$p.value < alpha)
   ifelse(decide, "Reject", "Fail to Reject")
 }
 
-get_sw_decision = function(model, alpha) {
+get_sw_decision <- function(model, alpha) {
   decide = unname(shapiro.test(resid(model))$p.value < alpha)
   ifelse(decide, "Reject", "Fail to Reject")
 }
