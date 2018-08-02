@@ -355,7 +355,7 @@ summary(md_mass_both)</code></pre>
 <pre class="r"><code>#Adding two-way interactions
 #md_mass_inter = lm(log(pl_bmasse) ~ (pl_discmethod + pl_disc + pl_locale + log(st_dist) + log(st_mass) + log(st_rad) + st_vsini + pl_orbeccen + log(pl_orbper))^2, data = planets_good)
 md_mass_inter = step(md_start, 
-                     scope = log(pl_bmasse) ~ pl_discmethod + pl_disc + pl_locale + log(st_dist) + st_optmag + log(st_mass) + log(st_rad) + exp(st_metfe) + st_vsini + pl_orbeccen + log(pl_orbper) + pl_locale:pl_orbeccen + log(st_mass):st_vsini +  pl_locale:log(st_dist) + log(st_dist):st_vsini + log(st_dist):log(pl_orbper) + st_vsini:log(pl_orbper) + pl_orbeccen:log(pl_orbper) + log(st_rad): st_logg, 
+                     scope = log(pl_bmasse) ~ pl_discmethod + pl_disc + pl_locale + log(st_dist) + st_optmag + log(st_mass) + log(st_rad) + exp(st_metfe) + st_vsini + log(pl_orbper) + pl_locale:pl_orbeccen + log(st_mass):st_vsini +  pl_locale:log(st_dist) + log(st_dist):st_vsini + log(st_dist):log(pl_orbper) + st_vsini:log(pl_orbper) + pl_orbeccen:log(pl_orbper) + log(st_rad): st_logg + log(pl_orbper):log(st_mass), 
                      direction = &quot;both&quot;, 
                      trace = 0)
 
@@ -363,10 +363,10 @@ summary(md_mass_inter)</code></pre>
 <pre><code>## 
 ## Call:
 ## lm(formula = log(pl_bmasse) ~ log(st_mass) + log(pl_orbper) + 
-##     log(st_dist) + pl_locale + pl_disc + st_vsini + pl_orbeccen + 
-##     log(st_rad) + pl_discmethod + log(pl_orbper):log(st_dist) + 
-##     pl_locale:pl_orbeccen + log(pl_orbper):pl_orbeccen + log(st_mass):st_vsini + 
-##     log(st_rad):st_logg, data = planets_good)
+##     log(st_dist) + pl_locale + pl_disc + st_vsini + log(st_rad) + 
+##     pl_discmethod + pl_locale:pl_orbeccen + log(pl_orbper):log(st_dist) + 
+##     log(pl_orbper):pl_orbeccen + log(st_mass):st_vsini + log(st_rad):st_logg, 
+##     data = planets_good)
 ## 
 ## Residuals:
 ##    Min     1Q Median     3Q    Max 
@@ -381,12 +381,12 @@ summary(md_mass_inter)</code></pre>
 ## pl_localeSpace                        -2.4367     0.1967  -12.39  &lt; 2e-16 ***
 ## pl_disc                               -0.1040     0.0105   -9.94  &lt; 2e-16 ***
 ## st_vsini                               0.0779     0.0155    5.04  6.3e-07 ***
-## pl_orbeccen                           -2.4968     0.7309   -3.42  0.00068 ***
 ## log(st_rad)                            0.8850     0.1474    6.00  3.4e-09 ***
 ## pl_discmethodTransit                  -0.1086     0.2607   -0.42  0.67719    
 ## pl_discmethodTransitTimingVariations   1.9476     0.8149    2.39  0.01716 *  
+## pl_localeGround:pl_orbeccen           -2.4968     0.7309   -3.42  0.00068 ***
+## pl_localeSpace:pl_orbeccen             2.1206     0.7358    2.88  0.00410 ** 
 ## log(pl_orbper):log(st_dist)           -0.1281     0.0201   -6.38  3.6e-10 ***
-## pl_localeSpace:pl_orbeccen             4.6174     0.7582    6.09  2.1e-09 ***
 ## log(pl_orbper):pl_orbeccen             0.5740     0.1164    4.93  1.1e-06 ***
 ## log(st_mass):st_vsini                 -0.0748     0.0231   -3.24  0.00126 ** 
 ## log(st_rad):st_logg                   -0.2145     0.0658   -3.26  0.00118 ** 
@@ -488,6 +488,8 @@ grid()</code></pre>
 </div>
 <div id="conclusion" class="section level2">
 <h2>Conclusion</h2>
+<p>According to the summary table for all the fitted models, even though the model with interaction added has more predictors than the other three selected models, its adjusted <span class="math inline">\(R^2\)</span> is significantly greater and the LOOCV RMSE is much lower than other models. To better model the relationship between our response (planet mass) and predictors, the interaction model is considered to be the best.</p>
+<p>By looking at the coefficents of the interaction model, we noticed that the coefficient for log(st_mass) and log(st_rad) are positive. It tells that we find more massive planets orbiting around more massive and larger host stars, vice versa. Therefore, if we want to discover small planets like the Earth, the model suggests we look for planets around smaller stars. The coefficient for pl_disc is negative with a value of -0.1040. This means that as we move forward in time, the discovered planets tend to be less massive. That might be an indicator that we are getting better at finding smaller planets. Negative coefficent of pl_discmethodTransit and positive coefficient of pl_discmethodTransitTimingVariations indicates that Transit as one of the discovoery method tends to discover smaller planets than Transit Timing Variations. The coefficent of pl_localeSpace is -2.4367, which indicates that planet search via space tends to find smaller planets than ground.</p>
 </div>
 
 

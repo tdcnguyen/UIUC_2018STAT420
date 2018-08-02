@@ -132,7 +132,7 @@ Here we build a model by introducing all possible two-way interactions, as well 
 #Adding two-way interactions
 #md_mass_inter = lm(log(pl_bmasse) ~ (pl_discmethod + pl_disc + pl_locale + log(st_dist) + log(st_mass) + log(st_rad) + st_vsini + pl_orbeccen + log(pl_orbper))^2, data = planets_good)
 md_mass_inter = step(md_start, 
-                     scope = log(pl_bmasse) ~ pl_discmethod + pl_disc + pl_locale + log(st_dist) + st_optmag + log(st_mass) + log(st_rad) + exp(st_metfe) + st_vsini + pl_orbeccen + log(pl_orbper) + pl_locale:pl_orbeccen + log(st_mass):st_vsini +  pl_locale:log(st_dist) + log(st_dist):st_vsini + log(st_dist):log(pl_orbper) + st_vsini:log(pl_orbper) + pl_orbeccen:log(pl_orbper) + log(st_rad): st_logg, 
+                     scope = log(pl_bmasse) ~ pl_discmethod + pl_disc + pl_locale + log(st_dist) + st_optmag + log(st_mass) + log(st_rad) + exp(st_metfe) + st_vsini + log(pl_orbper) + pl_locale:pl_orbeccen + log(st_mass):st_vsini +  pl_locale:log(st_dist) + log(st_dist):st_vsini + log(st_dist):log(pl_orbper) + st_vsini:log(pl_orbper) + pl_orbeccen:log(pl_orbper) + log(st_rad): st_logg + log(pl_orbper):log(st_mass), 
                      direction = "both", 
                      trace = 0)
 
@@ -195,3 +195,9 @@ get_sw_decision(md_mass_inter, alpha = 0.01)
 
 
 ## Conclusion
+
+According to the summary table for all the fitted models, even though the model with interaction added has more predictors than the other three selected models, its adjusted $R^2$ is significantly greater and the LOOCV RMSE is much lower than other models. To better model the relationship between our response (planet mass) and predictors, the interaction model is considered to be the best.  
+
+By looking at the coefficents of the interaction model, we noticed that the coefficient for log(st_mass) and log(st_rad) are positive. It tells that we find more massive planets orbiting around more massive and larger host stars, vice versa. Therefore, if we want to discover small planets like the Earth, the model suggests we look for planets around smaller stars. The coefficient for pl_disc is negative with a value of -0.1040. This means that as we move forward in time, the discovered planets tend to be less massive. That might be an indicator that we are getting better at finding smaller planets. Negative coefficent of pl_discmethodTransit and positive coefficient of pl_discmethodTransitTimingVariations indicates that Transit as one of the discovoery method tends to discover smaller planets than Transit Timing Variations. The coefficent of pl_localeSpace is -2.4367, which indicates that planet search via space tends to find smaller planets than ground.
+
+

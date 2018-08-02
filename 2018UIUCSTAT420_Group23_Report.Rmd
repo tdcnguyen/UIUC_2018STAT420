@@ -2,74 +2,169 @@
 title: "UIUC, STAT 420, 2018 Summer, Group 23, Data Analysis Project Report, Assessing Developments in the Search for Another Earth"
 author: "Jerome JASINSKI (jeromej2@illinois.edu), Dongrong LI (dl12@illinois.edu), Thai Duy Cuong NGUYEN (thaidn2@illinois.edu)"
 date: '2018-08-03'
-output:
-  html_document: 
-    toc: yes
-  pdf_document: default
+output: 
+html_document: 
+toc: yes
+pdf_document: default
 urlcolor: cyan
 ---
 
 ## Introduction ##
 
-### Motivation ###
-
 Are we alone in the Universe? This is one of the most profound questions that humankind has sought to answer since the beginning of recorded history. We can gain some insight into this mystery with the modern search for exoplanets. The underlying purpose of contemporary exoplanet programs is to discover habitable planets, especially around nearby stars, and find evidence of life elsewhere in the cosmos. Using Earth and its lifeforms as a template to assess habitability, we seek other celestial bodies with conditions similar to our own, i.e., with Earth-like surface gravities and temperatures where liquid water could exist. In order to meet these criteria, most habitable worlds must be a particular mass and a particular distance from their host star. We are interested in analyzing the data for confirmed exoplanets to asses our progress in finding a planet with similar physical characteristics to Earth.
 
 For our investigation, we used data from the NASA Exoplanet Archive, which can be found at the following URL [https://exoplanetarchive.ipac.caltech.edu](https://exoplanetarchive.ipac.caltech.edu). This archive is an online compilation, collation, and cross-correlation of astronomical data and information on exoplanets and their host stars. The data are vetted by a team of astronomers at the California Institute of Technology (Caltech) under contract with the National Aeronautics and Space Administration (NASA) under the Exoplanet Exploration Program. An extensive overview of the data, services and tools of the archive can be found in a published paper by Akeson, et al. (2013, PASP, 125, 989) in the Publications of the Astronomical Society of the Pacific (PASP). This publication can be found [here](http://adsabs.harvard.edu/abs/2013PASP..125..989A).
 
-We downloaded our dataset from the NASA Exoplanet Archive on 2018 July 5. The data consists of 354 columns and 3,748 rows with information on confirmed exoplanets and their host stars as well as information about their discovery. Discovery information includes the method used to detect the exoplanet, the locale of the observatories used for detection (i.e., whether ground-based, space-based, or a mixture of both observations were used for detection), and the year of discovery. Physical characteristics of exoplanets present in the archive include planetary mass, orbital period, and orbital semi-major axis. Physical properties of host stars listed in the archive include stellar mass, stellar radius, effective temperature, surface gravity, spectral type, luminosity, and distance from Earth. These physical properties for both exoplanets and their host stars are important for determining the similarity between an exoplanet and Earth, and their detection sensitivity.
+We downloaded our dataset from the NASA Exoplanet Archive on 2018 July 5. The data consists of 354 columns and 3,748 rows of information on confirmed exoplanets and their host stars as well as information about their discovery. Discovery information includes the method used to detect the exoplanet, the locale of the observatories used for detection (i.e., whether ground-based, space-based, or a mixture of both observations were used for detection), and the year of discovery. Physical characteristics of exoplanets present in the archive include planetary mass, orbital period, and orbital semi-major axis. Physical properties of host stars listed in the archive include stellar mass, stellar radius, effective temperature, surface gravity, spectral type, luminosity, and distance from Earth. These physical properties for both exoplanets and their host stars are important for determining the similarity between an exoplanet and Earth, and their detection sensitivity.
 
-We trimmed and removed space characters from the original dataset from the NASA Exoplanet Archive to the 37 columns that are most relevant and directly related to habitable planets. These data are stored in the file `planets_lite_ns.csv`. The variables for which we are interested as responses are `pl_bmasse`, `pl_orbsmax` and `st_dist` are the planet mass in Earth masses ($R_\odot = 5.9722 \times 10^{24}\,\rm{kg}$), the planet orbital semi-major axis in astronomical units ($\rm{AU} = 1.495978707 \times 10^{11}\,\rm{m}$), and the distance from our solar system to the exoplanet system in parsecs ($\rm{pc} = 3.0857 \times 10^{16}\,\rm{m}$). These response variables are key physical parameters that determine the habitability of a planet and the potential feasibility of reaching such a planet.
+We trimmed and removed space characters from the original dataset from the NASA Exoplanet Archive to the 15 columns that are most relevant and directly related to habitable planets. These data are stored in the file `planets.csv`. The variable for which we are most interested as a response for this study is `pl_orbsmax`, the planet orbital semi-major axis in astronomical units ($\rm{AU} = 1.495978707 \times 10^{11}\,\rm{m}$). This response variable is a key physical parameter that determines the habitability of a planet.
 
 ## Methods ##
 
-## Results ##
+### Data preprocessing ###
 
-## Discussion ##
-
-## Appendix ##
-
-
-The first few values of the response variables of interest are provided below.
+To ensure we had a consistent dataset with no empty values for any responses or predictors for which we were considering, we filtered out rows with any empty values and were left with 594 rows.
 
 ```{r}
-planets = read.csv("planets_lite_ns.csv")
-head(planets$pl_bmasse[complete.cases(planets$pl_bmasse)])
-head(planets$pl_orbsmax[complete.cases(planets$pl_orbsmax)])
-head(planets$st_dist[complete.cases(planets$st_dist)])
+planets <- read.csv("planets.csv")
+planets_good <- planets[complete.cases(planets), ]
 ```
 
+The structure of the `R` object for which we will perform our analysis is as follows.
+
 ```{r}
+str(planets_good)
+```
+
+There are two factor variables and 13 numeric variables. The following table briefly describes the variables.
+
+```{r, echo = FALSE}
+var_table <- data.frame(variable_names = c("`pl_discmethod`",
+                                           "`pl_disc`",
+                                           "`pl_locale`",
+                                           "`st_dist`",
+                                           "`st_optmag`",
+                                           "`st_teff`",
+                                           "`st_mass`",
+                                           "`st_rad`",
+                                           "`st_logg`",
+                                           "`st_metfe`",
+                                           "`st_vsini`",
+                                           "`pl_orbper`",
+                                           "`pl_orbsmax`",
+                                           "`pl_orbeccen`",
+                                           "`pl_bmasse`"),
+                        variable_descriptions = c("Method of discovery (RadialVelocity, Transit, TransitTimingVariations, etc.)",
+                                                  "Year of discovery",
+                                                  "Locale of discovery (Ground, MultipleLocales or Space)",
+                                                  "Stellar distance (parsecs)",
+                                                  "Stellar apparent magnitude (mag)",
+                                                  "Stellar effective temperature (Kelvin)",
+                                                  "Stellar mass (solar masses)",
+                                                  "Stellar radius (solar radii)",
+                                                  "Stellar surface gravity (log g)",
+                                                  "Stellar metallicity (log(Fe/H or M/H))",
+                                                  "Stellar projected rotational velocity (m/s)",
+                                                  "Planet orbital period (days)",
+                                                  "Planet orbital semi-major axis (AU)",
+                                                  "Planet orbital eccentricity",
+                                                  "Planet mass (Earth masses)"))
+knitr::kable(var_table,
+             "markdown",
+             row.names = FALSE,
+             col.names = c("Variable name", "Variable description"),
+             align = c('l', 'l'))
+```
+
+Some of these variables may be collinear to each other. We can inspect for collinearity visually using a matrix of scatterplots of the variables.
+
+```{r, echo = FALSE, fig.height=24, fig.width=24}
+pairs(planets_good, col = "dodgerblue")
+```
+
+From the matrix of scatterplots, it appears that planet orbital period (`pl_orbper`) and orbital semi-major axis (`pl_orbsmax`) are collinear. This collinearity is not unexpected since orbital period and semi-major axis are related to each other physically as supported in Kepler's third law of planetary motion. It also appears that stellar radius (`st_rad`) and stellar surface gravity (`st_logg`) are collinear as well. Collinearity makes estimating model coefficients and interpreting models more difficult, but it does not affect model predictions. We will keep this in mind as we search for potential models for our data.
+
+### Model search ###
+
+The response for which we are most interested for the study exoplanet habitability is planet orbital semi-major axis (`pl_orbsmax`). The planet orbital semi-major axis is essentially the distance between a planet and its host star. This distance is important to planet habitability because only a certain range of distances between a planet and its host star would allow liquid water to exist on the planet to support life as we know it.
+
+We will first begin with an additive model with `pl_orbsmax` as the response and the remaining variables as predictors except `pl_orbper` which is fairly collinear with the response.
+
+```{r}
+pl_orbsmax_mod_add <- lm(pl_orbsmax ~ . - pl_orbper, data = planets_good)
+summary(pl_orbsmax_mod_add)
+```
+
+From the high *p-values* from the *t-statistic* for some of the predictors, a simpler model may be preferred.
+
+We will use a backward BIC search to find a potentially better model.
+
+```{r}
+n <- length(resid(pl_orbsmax_mod_add))
+pl_orbsmax_mod_back_bic <- step(pl_orbsmax_mod_add, direction = "backward", k = log(n), trace = 0)
+summary(pl_orbsmax_mod_back_bic)
+```
+
+The model found by a backward BIC search is considerably simpler; this model has seven parameters compared to 14 for the additive model. Furthermore, most of the predictors have low *p-values* associated with their *t-statistic*. However, the adjusted $R^2$ of `r summary(pl_orbsmax_mod_back_bic)$adj.r.squared` could be improved.
+
+Next, we will try transform the response `pl_orbsmax`. Physically, the span of exoplanet orbital semi-major axis is fairly large. Thus, we are motivated to transform the response with a logarithm function and repeat the previous model search.
+
+```{r}
+log_pl_orbsmax_mod_add <- lm(log(pl_orbsmax) ~ . - pl_orbper, data = planets_good)
+n <- length(resid(log_pl_orbsmax_mod_add))
+log_pl_orbsmax_mod_back_bic <- step(log_pl_orbsmax_mod_add, direction = "backward", k = log(n), trace = 0)
+summary(log_pl_orbsmax_mod_back_bic)
+```
+
+For this `log(pl_orbsmax)` model, the adjusted $R^2$ of `r summary(log_pl_orbsmax_mod_back_bic)$adj.r.squared` is an improvement from the analogous model for `pl_orbsmax`. We could consider interaction models, but with nine parameters in this latest model already, we will forego deriving an interaction model for now.
+
+### Preliminary model diagnostics ###
+
+We will check the constant variance assumption for our latest model using a residual versus fitted values plot, and using a Breusch-Pagan test.
+
+```{r, echo = FALSE, fig.width = 12, fig.height = 12}
+plot(fitted(log_pl_orbsmax_mod_back_bic),
+     resid(log_pl_orbsmax_mod_back_bic),
+     main = "Residuals vs. Fitted values",
+     xlab = "Fitted values",
+     ylab = "Residual values",
+     col = "dodgerblue")
+abline(h = 0, col = "orange", lwd = 2)
+```
+
+By visual inspection, the general span of residuals is not very constant across the range of fitted values. This suggests that homoscedasticity or constant variance is suspect.
+
+Next, we will perform the Breusch-Pagan test on the model.
+
+```{r, message = FALSE}
 library(lmtest)
-
-get_bp_decision = function(model, alpha) {
-  decide = unname(bptest(model)$p.value < alpha)
-  ifelse(decide, "Reject", "Fail to Reject")
-}
-
-get_sw_decision = function(model, alpha) {
-  decide = unname(shapiro.test(resid(model))$p.value < alpha)
-  ifelse(decide, "Reject", "Fail to Reject")
-}
-
-get_num_params = function(model) {
-  length(coef(model))
-}
-
-get_loocv_rmse = function(model) {
-  sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
-}
-
-get_adj_r2 = function(model) {
-  summary(model)$adj.r.squared
-}
+log_pl_orbsmax_mod_back_bic_bp <- bptest(log_pl_orbsmax_mod_back_bic)
 ```
+
+The *p-value* from the Breusch-Pagan test for the model is $`r log_pl_orbsmax_mod_back_bic_bp$p.value`$. For an often used significance level of $\alpha = 0.01$, this *p-value* of $`r log_pl_orbsmax_mod_back_bic_bp$p.value` \ll \alpha$. This further suggests that homoscedasticity is suspect.
+
+We will check the normality assumption for our model using a Q-Q plot, and using a Shapiro-Wilk test.
+
+```{r, echo = FALSE, fig.width = 12, fig.height = 12}
+qqnorm(resid(log_pl_orbsmax_mod_back_bic), main = "Normal Q-Q Plot", col = "dodgerblue")
+qqline(resid(log_pl_orbsmax_mod_back_bic), col = "orange", lwd = 2)
+```
+
+By visual inspection, the data seems to deviate slightly from normality in the lower part of the Q-Q plot. The normality assumption may be suspect.
+
+Next, we will perform the Shapiro-Wilk test on the model.
 
 ```{r}
-planets_good_idx = complete.cases(planets$st_dist, planets$st_optmag, planets$st_teff, planets$st_mass, planets$st_rad, planets$st_logg, planets$st_metfe, planets$st_vsini, planets$pl_orbsmax, planets$pl_orbeccen, planets$pl_bmasse)
-planets_good_col = c("pl_discmethod", "pl_disc", "pl_locale", "ra", "dec", "st_glon", "st_glat", "st_elon", "st_elat", "st_dist", "st_optmag", "st_teff", "st_mass", "st_rad", "st_logg", "st_lum", "st_metfe", "st_vsini", "pl_orbper", "pl_orbsmax", "pl_orbeccen", "pl_bmasse")
-p = planets[planets_good_idx, planets_good_col]
+log_pl_orbsmax_mod_back_bic_sw <- shapiro.test(resid(log_pl_orbsmax_mod_back_bic))
 ```
+
+The *p-value* from the Shapiro-Wilk test for the model is $`r log_pl_orbsmax_mod_back_bic_sw$p.value`$. For an often used significance level of $\alpha = 0.01$, this *p-value* of $`r log_pl_orbsmax_mod_back_bic_sw$p.value` \lt \alpha$. This further suggests that normality is suspect.
+
+### Exhaustive model search ###
+
+While we could continue to tweak the model with transformations on the predictors or vary model search approaches like direction (e.g., forward or stepwise) or quality estimator (e.g., AIC) to obtain homoscedasticity and normality, we can also try an exhaustive model search. An exhaustive search that is not too large could allow us to systematically try mutually exclusive combinations of linear and logarithm transformations of the predictors.
+
+We will first setup the storage for the results of the exhaustive model search.
 
 ```{r}
 n <- (2^8) * (3^5)
@@ -80,56 +175,41 @@ sw_value_results <- rep(0, n)
 num_params_results <- rep(0, n)
 ```
 
-```{r, eval = FALSE}
-lm_str_head <- "m=lm(log(st_dist)~"
-lm_str_tail <- ",data=p)"
+We will generate strings that will be parsed and evaluated by `R` to fit the models. See the appendix for the `R` code.
+
+```{r, echo = FALSE}
+lm_str_head <- "cur_mod=lm(log(pl_orbsmax)~"
+lm_str_tail <- ",data=planets_good)"
 lm_str <- rep("", n)
 i <- 1
 for (ipl_discmethod in c("1", "pl_discmethod")) {
   for (ipl_disc in c("1", "pl_disc")) {
     for (ipl_locale in c("1", "pl_locale")) {
-#      for (ist_glon in c("1", "st_glon")) {
-#        for (ist_glat in c("1", "st_glat")) {
-#          for (ist_elon in c("1", "st_elon")) {
-#            for (ist_elat in c("1", "st_elat")) {
-              for (ist_optmag in c("1", "st_optmag")) {
-                for (ist_teff in c("1", "st_teff", "log(st_teff)")) {
-                  for (ist_mass in c("1", "st_mass", "log(st_mass)")) {
-                    for (ist_rad in c("1", "st_rad", "log(st_rad)")) {
-                      for (ist_logg in c("1", "st_logg")) {
-                        for (ist_metfe in c("1", "st_metfe")) {
-                          for (ist_vsini in c("1", "st_vsini")) {
-#                            for (ipl_orbper in c("1", "pl_orbper", "log(pl_orbper)")) {
-                              for (ipl_orbsmax in c("1", "pl_orbsmax", "log(pl_orbsmax)")) {
-                                for (ipl_orbeccen in c("1", "pl_orbeccen")) {
-                                  for (ipl_bmasse in c("1", "pl_bmasse", "log(pl_bmasse)")) {
-#                                  for (ist_dist in c("1", "st_dist", "log(st_dist)")) {
-                                    lm_str[i] <- paste(ipl_discmethod,
-                                                       ipl_disc,
-                                                       ipl_locale,
-#                                                       ist_glon,
-#                                                       ist_glat,
-#                                                       ist_elon,
-#                                                       ist_elat,
-                                                       ist_optmag,
-                                                       ist_teff,
-                                                       ist_mass,
-                                                       ist_rad,
-                                                       ist_logg,
-                                                       ist_metfe,
-                                                       ist_vsini,
-#                                                       ipl_orbper,
-                                                       ipl_orbsmax,
-                                                       ipl_orbeccen,
-ipl_bmasse,
-#                                                       ist_dist,
-                                                       sep = "+")
-                                    i <- i + 1
-                                  }
-                                }
-                              }
-                            }
-                          }
+      for (ist_dist in c("1", "st_dist", "log(st_dist)")) {
+        for (ist_optmag in c("1", "st_optmag")) {
+          for (ist_teff in c("1", "st_teff", "log(st_teff)")) {
+            for (ist_mass in c("1", "st_mass", "log(st_mass)")) {
+              for (ist_rad in c("1", "st_rad", "log(st_rad)")) {
+                for (ist_logg in c("1", "st_logg")) {
+                  for (ist_metfe in c("1", "st_metfe")) {
+                    for (ist_vsini in c("1", "st_vsini")) {
+                      for (ipl_orbeccen in c("1", "pl_orbeccen")) {
+                        for (ipl_bmasse in c("1", "pl_bmasse", "log(pl_bmasse)")) {
+                          lm_str[i] <- paste(ipl_discmethod,
+                                             ipl_disc,
+                                             ipl_locale,
+                                             ist_dist,
+                                             ist_optmag,
+                                             ist_teff,
+                                             ist_mass,
+                                             ist_rad,
+                                             ist_logg,
+                                             ist_metfe,
+                                             ist_vsini,
+                                             ipl_orbeccen,
+                                             ipl_bmasse,
+                                             sep = "+")
+                          i <- i + 1
                         }
                       }
                     }
@@ -138,25 +218,285 @@ ipl_bmasse,
               }
             }
           }
-#        }
-#      }
-#    }
-#  }
-#}
+        }
+      }
+    }
+  }
+}
 ```
 
-```{r, eval = FALSE}
+```{r, echo = FALSE}
+get_bp_decision <- function(model, alpha) {
+  decide = unname(bptest(model)$p.value < alpha)
+  ifelse(decide, "Reject", "Fail to Reject")
+}
+
+get_sw_decision <- function(model, alpha) {
+  decide = unname(shapiro.test(resid(model))$p.value < alpha)
+  ifelse(decide, "Reject", "Fail to Reject")
+}
+
+get_num_params <- function(model) {
+  length(coef(model))
+}
+
+get_loocv_rmse <- function(model) {
+  sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
+}
+
+get_adj_r2 <- function(model) {
+  summary(model)$adj.r.squared
+}
+```
+
+We will fit all of the model combinations and store the results.
+
+```{r}
 for (i in 2:n) {
-  if ( 0 == i %% 10000) {
-    print(i)
-  }
-  
   eval(parse(text = paste(lm_str_head, lm_str[i], lm_str_tail)))
   
-  loocv_rmse_results[i] <- get_loocv_rmse(m)
-  adj_r2_results[i] <- get_adj_r2(m)
-  bp_value_results[i] <- bptest(m)$p.value
-  sw_value_results[i] <- shapiro.test(resid(m))$p.value
-  num_params_results[i] <- get_num_params(m)
+  adj_r2_results[i] <- get_adj_r2(cur_mod)
+  bp_value_results[i] <- bptest(cur_mod)$p.value
+  loocv_rmse_results[i] <- get_loocv_rmse(cur_mod)
+  num_params_results[i] <- get_num_params(cur_mod)
+  sw_value_results[i] <- shapiro.test(resid(cur_mod))$p.value
+}
+```
+
+We would like to identify models in our collection where we fail to reject the hypothesis of homoscedasticity and normality, and have a reasonably large adjusted $R^2$ values, e.g., $\gt 0.5$.
+
+```{r}
+idx <- (bp_value_results > 0.01) & (sw_value_results > 0.01) & (adj_r2_results > 0.5)
+```
+
+There are `r sum(idx)` models where we fail to reject the hypothesis of homoscedasticity and normality for a significance level of $\alpha = 0.01$.
+
+Of those models, we could choose the model with the lowest LOOCV-RMSE.
+
+```{r}
+eval(parse(text = paste("log_pl_orbsmax_mod_exh = lm(log(pl_orbsmax)~", lm_str[which(idx)[which.min(loocv_rmse_results[which(idx)])]], lm_str_tail)))
+```
+
+We will use a backward BIC search to see if we could find a simpler model with this model as a starting point.
+
+```{r}
+n <- length(resid(log_pl_orbsmax_mod_exh))
+log_pl_orbsmax_mod_exh_back_bic <- step(log_pl_orbsmax_mod_exh, direction = "backward", k = log(n), trace = 0)
+```
+
+We will use this model to gain some insight into the orbital semi-major axes of confirmed exoplanets to date.
+
+## Results ##
+
+The `R` summary for the model we have chosen to examine the orbital semi-major axis of exoplanets is given below.
+
+```{r}
+summary(log_pl_orbsmax_mod_exh_back_bic)
+```
+
+### Model diagnostics ###
+
+We will check the constant variance assumption for our final model using a residual versus fitted values plot, and using a Breusch-Pagan test.
+
+```{r, echo = FALSE, fig.width = 12, fig.height = 12}
+plot(fitted(log_pl_orbsmax_mod_exh_back_bic),
+     resid(log_pl_orbsmax_mod_exh_back_bic),
+     main = "Residuals vs. Fitted values",
+     xlab = "Fitted values",
+     ylab = "Residual values",
+     col = "dodgerblue")
+abline(h = 0, col = "orange", lwd = 2)
+```
+
+By visual inspection, the general span of residuals is mostly constant across the range of fitted values although many of the datapoints are clustered in two areas.
+
+Next, we will perform the Breusch-Pagan test on the model.
+
+```{r, message = FALSE}
+library(lmtest)
+log_pl_orbsmax_mod_exh_back_bic_bp <- bptest(log_pl_orbsmax_mod_exh_back_bic)
+```
+
+The *p-value* from the Breusch-Pagan test for the model is $`r log_pl_orbsmax_mod_exh_back_bic_bp$p.value`$. For an often used significance level of $\alpha = 0.01$, this *p-value* of $`r log_pl_orbsmax_mod_back_bic_bp$p.value` \gt \alpha$. This suggests that homoscedasticity is not suspect.
+
+We will check the normality assumption for our model using a Q-Q plot, and using a Shapiro-Wilk test.
+
+```{r, echo = FALSE, fig.width = 12, fig.height = 12}
+qqnorm(resid(log_pl_orbsmax_mod_exh_back_bic), main = "Normal Q-Q Plot", col = "dodgerblue")
+qqline(resid(log_pl_orbsmax_mod_exh_back_bic), col = "orange", lwd = 2)
+```
+
+By visual inspection, the data seems to consistent with normality.
+
+Next, we will perform the Shapiro-Wilk test on the model.
+
+```{r}
+log_pl_orbsmax_mod_exh_back_bic_sw <- shapiro.test(resid(log_pl_orbsmax_mod_exh_back_bic))
+```
+
+The *p-value* from the Shapiro-Wilk test for the model is $`r log_pl_orbsmax_mod_exh_back_bic_sw$p.value`$. For an often used significance level of $\alpha = 0.01$, this *p-value* of $`r log_pl_orbsmax_mod_exh_back_bic_sw$p.value` \gt \alpha$. This suggests that normality is not suspect.
+
+We will look at the variance inflation factor (VIF) to examine collinearity in our model variables. The following table lists the predictors in our model and its corresponding VIF.
+
+```{r, echo = FALSE, message = FALSE}
+log_pl_orbsmax_mod_exh_back_bic_vif <- car::vif(log_pl_orbsmax_mod_exh_back_bic)
+vif_table <- data.frame(variable_names = c("`pl_locale`",
+                                           "`st_optmag`",
+                                           "`st_vsini`",
+                                           "`log(pl_bmasse)`"),
+                        vif_values = unname(log_pl_orbsmax_mod_exh_back_bic_vif))
+knitr::kable(vif_table,
+             "markdown",
+             row.names = FALSE,
+             col.names = c("Variable name", "VIF"),
+             align = c('l', 'r'))
+
+```
+
+None of the model variables has a VIF greater than five, so we do not suspect any significant collinearity in our model.
+
+### Model comparison ###
+
+```{r, echo = FALSE}
+mod_table <- data.frame(model_names = c("Additive Model",
+                                       "Backward BIC Model",
+                                       "Logarithmic Additive Model",
+                                       "Logarithmic Backward BIC Model",
+                                       "Logarithmic Exhaustive Model",
+                                       "Logarithmic Exhaustive Backward BIC Model"),
+                       adj_r2 = c(summary(pl_orbsmax_mod_add)$adj.r.squared,
+                                  summary(pl_orbsmax_mod_back_bic)$adj.r.squared,
+                                  summary(log_pl_orbsmax_mod_add)$adj.r.squared,
+                                  summary(log_pl_orbsmax_mod_back_bic)$adj.r.squared,
+                                  summary(log_pl_orbsmax_mod_exh)$adj.r.squared,
+                                  summary(log_pl_orbsmax_mod_exh_back_bic)$adj.r.squared),
+                       loocv_rmse = c(get_loocv_rmse(pl_orbsmax_mod_add),
+                                      get_loocv_rmse(pl_orbsmax_mod_back_bic),
+                                      get_loocv_rmse(log_pl_orbsmax_mod_add),
+                                      get_loocv_rmse(log_pl_orbsmax_mod_back_bic),
+                                      get_loocv_rmse(log_pl_orbsmax_mod_exh),
+                                      get_loocv_rmse(log_pl_orbsmax_mod_exh_back_bic)),
+                       bp = c(get_bp_decision(pl_orbsmax_mod_add, 0.01),
+                              get_bp_decision(pl_orbsmax_mod_back_bic, 0.01),
+                              get_bp_decision(log_pl_orbsmax_mod_add, 0.01),
+                              get_bp_decision(log_pl_orbsmax_mod_back_bic, 0.01),
+                              get_bp_decision(log_pl_orbsmax_mod_exh, 0.01),
+                              get_bp_decision(log_pl_orbsmax_mod_exh_back_bic, 0.01)),
+                       sw = c(get_sw_decision(pl_orbsmax_mod_add, 0.01),
+                              get_sw_decision(pl_orbsmax_mod_back_bic, 0.01),
+                              get_sw_decision(log_pl_orbsmax_mod_add, 0.01),
+                              get_sw_decision(log_pl_orbsmax_mod_back_bic, 0.01),
+                              get_sw_decision(log_pl_orbsmax_mod_exh, 0.01),
+                              get_sw_decision(log_pl_orbsmax_mod_exh_back_bic, 0.01)),
+                       num_params = c(get_num_params(pl_orbsmax_mod_add) - 1,
+                                      get_num_params(pl_orbsmax_mod_back_bic) - 1,
+                                      get_num_params(log_pl_orbsmax_mod_add) - 1,
+                                      get_num_params(log_pl_orbsmax_mod_back_bic) - 1,
+                                      get_num_params(log_pl_orbsmax_mod_exh) - 1,
+                                      get_num_params(log_pl_orbsmax_mod_exh_back_bic) - 1))
+knitr::kable(mod_table,
+             "markdown",
+             row.names = FALSE,
+             col.names = c("Model", "Adjusted $R^2$", "LOOCV RMSE", "Breusch-Pagan test decision", "Shapiro-Wilks test decision", "# of Predictors"),
+             align = c('l', 'l', 'l', 'l', 'l', 'l'))
+```
+
+We prefer models where assumptions of homoscedasticity and normality are not suspect. While the logarithmic additive and logarithmic backward BIC models had larger adjusted $R^2$ values and lower LOOCV-RMSE values, the Breusch-Pagan and Shapiro-Wilks tests results would reject the hypothesis of constant variance and normality, respectively. The logarithmic exhaustive backward BIC model has comparable adjusted $R^2$ and LOOCV-RMSE values and with only four predictors compared to eight predictors for its counterpart without applying a backward BIC search.
+
+## Discussion ##
+
+The `R` summary for the model we have chosen to examine the orbital semi-major axis of exoplanets is given below.
+
+```{r}
+summary(log_pl_orbsmax_mod_exh_back_bic)
+```
+
+The model we have chosen to predict the (logarithm of) planet orbital semi-major axis is an additive model with four predictors which are the locale of discovery, the stellar apparent magnitude, the stellar projected rotational velocity, and the logarithm of planet mass.
+
+The coefficient for the locale of discovery is `r log_pl_orbsmax_mod_exh_back_bic$coefficients[2]`. This means that exoplanets discovered using space-based observations are generally found to be further from their host stars than those discovered using ground-based observations by a factor of `r exp(log_pl_orbsmax_mod_exh_back_bic$coefficients[2])`. Most space-based exoplanet discoveries were made using the Kepler space observatory ([https://exoplanetarchive.ipac.caltech.edu/docs/counts_detail.html](https://exoplanetarchive.ipac.caltech.edu/docs/counts_detail.html)). Kepler uses the transit search method to find exoplanets which is theoretically more sensitive to planets with wide orbits than is the radial velocity method which is the other major method for planet detection.
+
+The coefficient for stellar apparent magnitude is `r log_pl_orbsmax_mod_exh_back_bic$coefficients[3]`. This indicates that exoplanets with tighter orbits tend to be found around stars with higher apparent magnitude, and vice versa, i.e., exoplanets with wider orbits tend to be found around stars with lower apparent magnitude. The apparent magnitude of a star is a measure of its brightness as seen by an observer on Earth. Stellar magnitude is an inverse relation, i.e., the brighter an object appears, the lower its magnitude value and vice versa. Therefore, exoplanets with small orbits are more often found around faint stars as observed from Earth. This is not unexpected since the signal from faint stars has higher noise than from bright stars, and planets close-in to their host star are intrinsically more likely to be detected by the two most common techniques of planet detection, radial velocity method and transit search, than those farther from their host star.
+
+The coefficient for stellar projected rotational velocity is `r log_pl_orbsmax_mod_exh_back_bic$coefficients[4]`. For every unit increase in projected rotational velocity, there is a slight decrease in the orbital semi-major axis of a confirmed exoplanet. In other words, one is more likely to find an exoplanet in a tight orbit around a rapidly rotating star, and in a wide orbit around a slowly rotating star. This effect could come from observational bias. The radial velocity method for finding exoplanets relies on tracking spectral features from starlight, and stellar rotation broadens these features and making them less trackable. As mentioned previously, the radial velocity method is also more sensitive to planets in tighter orbits, so the radial velocity indicators from planets orbiting tightly around a rapidly rotating star are more likely to accurately observed than wider orbiting counterparts.
+
+The coefficient of (the logarithm of) planet mass is `r log_pl_orbsmax_mod_exh_back_bic$coefficients[5]`. This means that more massive planets tend to be found orbiting farther from their host star than their less massive counterparts. This planet mass-orbit relation scales as a power law with an exponent of `r log_pl_orbsmax_mod_exh_back_bic$coefficients[5]` (the corresonding coefficient in our model). This result could be physical, observational, or both. The massive gas giant planets in our solar system have wider orbits than the small terrestrial planets. Massive planets are more detectable than less massive planets, and the two most common methods for finding exoplanets, radial velocity method and transit search, are more sensitive to planets in closer orbits.
+
+Our model is useful by highlighting the significant difference in planet discoveries made from space and those made on the ground. Our model can also be used to estimate the detection limits of finding planets around faint stars and rapidly rotating stars. Ideally, we would like to discover an Earth-mass exoplanet orbiting its host star at a distance where liquid water could exist and support life. The planet mass-orbit relation derived from our analysis of confirmed exoplanets could help to tell us how close we are or how much improvement we must make in our planet searches in order to discovery another Earth.
+
+## Appendix ##
+
+The following code lists helper `R` functions that calculate or retrieve statistical values and report statistical decisions.
+
+```{r, eval = FALSE}
+get_adj_r2 <- function(model) {
+  summary(model)$adj.r.squared
+}
+
+get_loocv_rmse <- function(model) {
+  sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
+}
+
+get_num_params <- function(model) {
+  length(coef(model))
+}
+
+get_bp_decision <- function(model, alpha) {
+  decide = unname(bptest(model)$p.value < alpha)
+  ifelse(decide, "Reject", "Fail to Reject")
+}
+
+get_sw_decision <- function(model, alpha) {
+  decide = unname(shapiro.test(resid(model))$p.value < alpha)
+  ifelse(decide, "Reject", "Fail to Reject")
+}
+```
+
+The following code is the multi-nested loop used to generate strings that were parsed and evaluated by `R` to fit a collection models in the exhaustive model search.
+
+```{r, eval = FALSE}
+lm_str_head <- "cur_mod=lm(log(pl_orbsmax)~"
+lm_str_tail <- ",data=planets_good)"
+lm_str <- rep("", n)
+i <- 1
+for (ipl_discmethod in c("1", "pl_discmethod")) {
+  for (ipl_disc in c("1", "pl_disc")) {
+    for (ipl_locale in c("1", "pl_locale")) {
+      for (ist_dist in c("1", "st_dist", "log(st_dist)")) {
+        for (ist_optmag in c("1", "st_optmag")) {
+          for (ist_teff in c("1", "st_teff", "log(st_teff)")) {
+            for (ist_mass in c("1", "st_mass", "log(st_mass)")) {
+              for (ist_rad in c("1", "st_rad", "log(st_rad)")) {
+                for (ist_logg in c("1", "st_logg")) {
+                  for (ist_metfe in c("1", "st_metfe")) {
+                    for (ist_vsini in c("1", "st_vsini")) {
+                      for (ipl_orbeccen in c("1", "pl_orbeccen")) {
+                        for (ipl_bmasse in c("1", "pl_bmasse", "log(pl_bmasse)")) {
+                          lm_str[i] <- paste(ipl_discmethod,
+                                             ipl_disc,
+                                             ipl_locale,
+                                             ist_dist,
+                                             ist_optmag,
+                                             ist_teff,
+                                             ist_mass,
+                                             ist_rad,
+                                             ist_logg,
+                                             ist_metfe,
+                                             ist_vsini,
+                                             ipl_orbeccen,
+                                             ipl_bmasse,
+                                             sep = "+")
+                          i <- i + 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
 ```
