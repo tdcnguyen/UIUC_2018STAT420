@@ -276,7 +276,6 @@ Of those models, we could choose the model with the lowest LOOCV-RMSE.
 
 ```{r}
 eval(parse(text = paste("log_pl_orbsmax_mod_exh = lm(log(pl_orbsmax)~", lm_str[which(idx)[which.min(loocv_rmse_results[which(idx)])]], lm_str_tail)))
-summary(log_pl_orbsmax_mod_exh)
 ```
 
 We will use a backward BIC search to see if we could find a simpler model with this model as a starting point.
