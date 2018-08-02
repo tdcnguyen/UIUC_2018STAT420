@@ -1,11 +1,3 @@
-<style type="text/css">
-.main-container {
-max-width: 1800px;
-margin-left: auto;
-margin-right: auto;
-}
-</style>
-
 ---
 title: "UIUC, STAT 420, 2018 Summer, Group 23, Data Analysis Project Report, Assessing Developments in the Search for Another Earth"
 author: "Jerome JASINSKI (jeromej2@illinois.edu), Dongrong LI (dl12@illinois.edu), Thai Duy Cuong NGUYEN (thaidn2@illinois.edu)"
@@ -16,10 +8,6 @@ toc: yes
 pdf_document: default
 urlcolor: cyan
 ---
-
-```{r set-options, echo = FALSE, cache = FALSE}
-options(width = 30)
-```
 
 ## Introduction ##
 
@@ -99,7 +87,42 @@ From the matrix of scatterplots, it appears that planet orbital period (`pl_orbp
 
 ### Model search ###
 
-The response for which we are most interested for the study exoplanet habitability is planet orbital semi-major axis (`pl_orbsmax`).
+The response for which we are most interested for the study exoplanet habitability is planet orbital semi-major axis (`pl_orbsmax`). The planet orbital semi-major axis is essentially the distance between a planet and its host star. This distance is important to planet habitability because only a certain range of distances between a planet and its host star would allow liquid water to exist on the planet to support life as we know it.
+
+We will first begin with an additive model with `pl_orbsmax` as the response and the remaining variables as predictors except `pl_orbper` which is fairly collinear with the response.
+
+```{r}
+pl_orbsmax_mod_add <- lm(pl_orbsmax ~ . - pl_orbper, data = planets_good)
+summary(pl_orbsmax_mod_add)
+```
+
+From the high *p-values* from the *t-statistic* for some of the predictors, a simpler model may be preferred.
+
+We will use a backward BIC search to find a potentially better model.
+
+```{r}
+n <- length(resid(pl_orbsmax_mod_add))
+pl_orbsmax_mod_back_bic <- step(pl_orbsmax_mod_add, direction = "backward", k = log(n), trace = 0)
+summary(pl_orbsmax_mod_back_bic)
+```
+
+The model found by a backward BIC search is considerably simpler; this model has seven parameters compared to 14 for the additive model. Furthermore, most of the predictors have low *p-values* associated with their *t-statistic*. However, the adjusted $R^2$ of `r summary(pl_orbsmax_mod_back_bic)$adj.r.squared` could be improved.
+
+Next, we will try transform the response `pl_orbsmax`. Physically, the span of exoplanet orbital semi-major axis is fairly large. Thus, we are motivated to transform the response with a logarithm function and repeat the previous model search.
+
+```{r}
+log_pl_orbsmax_mod_add <- lm(log(pl_orbsmax) ~ . - pl_orbper, data = planets_good)
+n <- length(resid(log_pl_orbsmax_mod_add))
+log_pl_orbsmax_mod_back_bic <- step(log_pl_orbsmax_mod_add, direction = "backward", k = log(n), trace = 0)
+summary(log_pl_orbsmax_mod_back_bic)
+```
+
+For this `log(pl_orbsmax)` model, the adjusted $R^2$ of `r summary(log_pl_orbsmax_mod_back_bic)$adj.r.squared` is an improvement from the analogous model for `pl_orbsmax`. We could consider interaction models, but with nine parameters in this latest model already, we will forego deriving an interaction model for now.
+
+### Residual diagnostics ###
+
+
+
 
 ```{r}
 n <- (2^8) * (3^5)
