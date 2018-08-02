@@ -2,7 +2,7 @@
 title: "UIUC, STAT 420, 2018 Summer, Group 23, Data Analysis Project Report, Assessing Developments in the Search for Another Earth"
 author: "Jerome JASINSKI (jeromej2@illinois.edu), Dongrong LI (dl12@illinois.edu), Thai Duy Cuong NGUYEN (thaidn2@illinois.edu)"
 date: '2018-08-03'
-output:
+output: 
 html_document: 
 toc: yes
 pdf_document: default
@@ -119,10 +119,53 @@ summary(log_pl_orbsmax_mod_back_bic)
 
 For this `log(pl_orbsmax)` model, the adjusted $R^2$ of `r summary(log_pl_orbsmax_mod_back_bic)$adj.r.squared` is an improvement from the analogous model for `pl_orbsmax`. We could consider interaction models, but with nine parameters in this latest model already, we will forego deriving an interaction model for now.
 
-### Residual diagnostics ###
+### Preliminary model diagnostics ###
 
+We will check the constant variance assumption for our latest model using a residual versus fitted values plot, and using a Breusch-Pagan test.
 
+```{r, echo = FALSE}
+plot(fitted(log_pl_orbsmax_mod_back_bic),
+     resid(log_pl_orbsmax_mod_back_bic),
+     main = "Residuals vs. Fitted values",
+     xlab = "Fitted values",
+     ylab = "Residual values",
+     col = "dodgerblue")
+abline(h = 0, col = "orange", lwd = 2)
+```
 
+By visual inspection, the general span of residuals is not very constant across the range of fitted values. This suggests that homoscedasticity or constant variance is suspect.
+
+Next, we will perform the Breusch-Pagan test on the model.
+
+```{r, message = FALSE}
+library(lmtest)
+log_pl_orbsmax_mod_back_bic_bp <- bptest(log_pl_orbsmax_mod_back_bic)
+```
+
+The *p-value* from the Breusch-Pagan test for the model is $`r log_pl_orbsmax_mod_back_bic_bp$p.value`$. For an often used significance level of $\alpha = 0.01$, this *p-value* of $`r log_pl_orbsmax_mod_back_bic_bp$p.value` \ll \alpha$. This further suggests that homoscedasticity is suspect.
+
+We will check the normality assumption for our model using a Q-Q plot, and using a Shapiro-Wilk test.
+
+```{r, echo = FALSE}
+qqnorm(resid(log_pl_orbsmax_mod_back_bic), main = "Normal Q-Q Plot", col = "dodgerblue")
+qqline(resid(log_pl_orbsmax_mod_back_bic), col = "orange", lwd = 2)
+```
+
+By visual inspection, the data seems to deviate slightly from normality in the lower part of the Q-Q plot. The normality assumption may be suspect.
+
+Next, we will perform the Shapiro-Wilk test on the model.
+
+```{r}
+log_pl_orbsmax_mod_back_bic_sw <- shapiro.test(resid(log_pl_orbsmax_mod_back_bic))
+```
+
+The *p-value* from the Shapiro-Wilk test for the model is $`r log_pl_orbsmax_mod_back_bic_sw$p.value`$. For an often used significance level of $\alpha = 0.01$, this *p-value* of $`r log_pl_orbsmax_mod_back_bic_sw$p.value` \lt \alpha$. This further suggests that normality is suspect.
+
+### Exhaustive model search ###
+
+While we could continue to try and tweak the model and vary the model search approache like direction (e.g., forward or stepwise) or quality estimator (e.g., AIC) to obtain homoscedasticity and normality, we can also try an exhaustive model search. An exhaustive search that is not too large could allow us to systematically try mutually exclusive combinations of linear and logarithm transformations of the predictors.
+
+We will first setup the storage for the results of the exhaustive model search.
 
 ```{r}
 n <- (2^8) * (3^5)
@@ -133,9 +176,11 @@ sw_value_results <- rep(0, n)
 num_params_results <- rep(0, n)
 ```
 
-```{r, eval = FALSE}
-lm_str_head <- "m=lm(log(pl_orbsmax)~"
-lm_str_tail <- ",data=p)"
+We will generate strings that will be parsed and evaluated by `R` to fit the models. See the appendix for the `R` code.
+
+```{r, echo = FALSE}
+lm_str_head <- "cur_mod=lm(log(pl_orbsmax)~"
+lm_str_tail <- ",data=planets_good)"
 lm_str <- rep("", n)
 i <- 1
 for (ipl_discmethod in c("1", "pl_discmethod")) {
@@ -181,31 +226,7 @@ for (ipl_discmethod in c("1", "pl_discmethod")) {
 }
 ```
 
-```{r, eval = FALSE}
-for (i in 2:n) {
-  if ( 0 == i %% 10000) {
-    print(i)
-  }
-  
-  eval(parse(text = paste(lm_str_head, lm_str[i], lm_str_tail)))
-  
-  loocv_rmse_results[i] <- get_loocv_rmse(m)
-  adj_r2_results[i] <- get_adj_r2(m)
-  bp_value_results[i] <- bptest(m)$p.value
-  sw_value_results[i] <- shapiro.test(resid(m))$p.value
-  num_params_results[i] <- get_num_params(m)
-}
-```
-
-## Results ##
-
-## Discussion ##
-
-## Appendix ##
-
-```{r}
-library(lmtest)
-
+```{r, echo = FALSE}
 get_bp_decision = function(model, alpha) {
   decide = unname(bptest(model)$p.value < alpha)
   ifelse(decide, "Reject", "Fail to Reject")
@@ -226,5 +247,97 @@ get_loocv_rmse = function(model) {
 
 get_adj_r2 = function(model) {
   summary(model)$adj.r.squared
+}
+```
+
+We will fit all of the model combinations and store the results.
+
+```{r}
+for (i in 2:n) {
+  eval(parse(text = paste(lm_str_head, lm_str[i], lm_str_tail)))
+  
+  adj_r2_results[i] <- get_adj_r2(cur_mod)
+  bp_value_results[i] <- bptest(cur_mod)$p.value
+  loocv_rmse_results[i] <- get_loocv_rmse(cur_mod)
+  num_params_results[i] <- get_num_params(cur_mod)
+  sw_value_results[i] <- shapiro.test(resid(cur_mod))$p.value
+}
+```
+
+## Results ##
+
+## Discussion ##
+
+## Appendix ##
+
+```{r, eval = FALSE}
+get_bp_decision = function(model, alpha) {
+  decide = unname(bptest(model)$p.value < alpha)
+  ifelse(decide, "Reject", "Fail to Reject")
+}
+
+get_sw_decision = function(model, alpha) {
+  decide = unname(shapiro.test(resid(model))$p.value < alpha)
+  ifelse(decide, "Reject", "Fail to Reject")
+}
+
+get_num_params = function(model) {
+  length(coef(model))
+}
+
+get_loocv_rmse = function(model) {
+  sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
+}
+
+get_adj_r2 = function(model) {
+  summary(model)$adj.r.squared
+}
+```
+
+```{r, eval = FALSE}
+lm_str_head <- "cur_mod=lm(log(pl_orbsmax)~"
+lm_str_tail <- ",data=planets_good)"
+lm_str <- rep("", n)
+i <- 1
+for (ipl_discmethod in c("1", "pl_discmethod")) {
+  for (ipl_disc in c("1", "pl_disc")) {
+    for (ipl_locale in c("1", "pl_locale")) {
+      for (ist_dist in c("1", "st_dist", "log(st_dist)")) {
+        for (ist_optmag in c("1", "st_optmag")) {
+          for (ist_teff in c("1", "st_teff", "log(st_teff)")) {
+            for (ist_mass in c("1", "st_mass", "log(st_mass)")) {
+              for (ist_rad in c("1", "st_rad", "log(st_rad)")) {
+                for (ist_logg in c("1", "st_logg")) {
+                  for (ist_metfe in c("1", "st_metfe")) {
+                    for (ist_vsini in c("1", "st_vsini")) {
+                      for (ipl_orbeccen in c("1", "pl_orbeccen")) {
+                        for (ipl_bmasse in c("1", "pl_bmasse", "log(pl_bmasse)")) {
+                          lm_str[i] <- paste(ipl_discmethod,
+                                             ipl_disc,
+                                             ipl_locale,
+                                             ist_dist,
+                                             ist_optmag,
+                                             ist_teff,
+                                             ist_mass,
+                                             ist_rad,
+                                             ist_logg,
+                                             ist_metfe,
+                                             ist_vsini,
+                                             ipl_orbeccen,
+                                             ipl_bmasse,
+                                             sep = "+")
+                          i <- i + 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
 ```
