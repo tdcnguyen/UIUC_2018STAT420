@@ -1,13 +1,25 @@
+<style type="text/css">
+.main-container {
+max-width: 1800px;
+margin-left: auto;
+margin-right: auto;
+}
+</style>
+
 ---
 title: "UIUC, STAT 420, 2018 Summer, Group 23, Data Analysis Project Report, Assessing Developments in the Search for Another Earth"
 author: "Jerome JASINSKI (jeromej2@illinois.edu), Dongrong LI (dl12@illinois.edu), Thai Duy Cuong NGUYEN (thaidn2@illinois.edu)"
 date: '2018-08-03'
 output:
-  html_document: 
-    toc: yes
-  pdf_document: default
+html_document: 
+toc: yes
+pdf_document: default
 urlcolor: cyan
 ---
+
+```{r set-options, echo = FALSE, cache = FALSE}
+options(width = 30)
+```
 
 ## Introduction ##
 
@@ -17,11 +29,11 @@ For our investigation, we used data from the NASA Exoplanet Archive, which can b
 
 We downloaded our dataset from the NASA Exoplanet Archive on 2018 July 5. The data consists of 354 columns and 3,748 rows of information on confirmed exoplanets and their host stars as well as information about their discovery. Discovery information includes the method used to detect the exoplanet, the locale of the observatories used for detection (i.e., whether ground-based, space-based, or a mixture of both observations were used for detection), and the year of discovery. Physical characteristics of exoplanets present in the archive include planetary mass, orbital period, and orbital semi-major axis. Physical properties of host stars listed in the archive include stellar mass, stellar radius, effective temperature, surface gravity, spectral type, luminosity, and distance from Earth. These physical properties for both exoplanets and their host stars are important for determining the similarity between an exoplanet and Earth, and their detection sensitivity.
 
-We trimmed and removed space characters from the original dataset from the NASA Exoplanet Archive to the 19 columns that are most relevant and directly related to habitable planets. These data are stored in the file `planets.csv`. The variables for which we are interested as responses are `pl_bmasse`, `pl_orbsmax` and `st_dist` are the planet mass in Earth masses ($R_\odot = 5.9722 \times 10^{24}\,\rm{kg}$), the planet orbital semi-major axis in astronomical units ($\rm{AU} = 1.495978707 \times 10^{11}\,\rm{m}$), and the distance from our solar system to the exoplanet system in parsecs ($\rm{pc} = 3.0857 \times 10^{16}\,\rm{m}$). These response variables are key physical parameters that determine the habitability of a planet and the potential feasibility of reaching such a planet.
+We trimmed and removed space characters from the original dataset from the NASA Exoplanet Archive to the 15 columns that are most relevant and directly related to habitable planets. These data are stored in the file `planets.csv`. The variables for which we are interested as responses are `pl_bmasse`, `pl_orbsmax` and `st_dist` are the planet mass in Earth masses ($R_\odot = 5.9722 \times 10^{24}\,\rm{kg}$), the planet orbital semi-major axis in astronomical units ($\rm{AU} = 1.495978707 \times 10^{11}\,\rm{m}$), and the distance from our solar system to the exoplanet system in parsecs ($\rm{pc} = 3.0857 \times 10^{16}\,\rm{m}$). These response variables are key physical parameters that determine the habitability of a planet and the potential feasibility of reaching such a planet.
 
 ## Methods ##
 
-### Data cleansing and description ###
+### Data preprocessing ###
 
 To ensure we had a consistent dataset with no empty values for any responses or predictors for which we were considering, we filtered out rows with any empty values and were left with 594 rows.
 
@@ -36,16 +48,12 @@ The structure of the `R` object for which we will perform our analysis is as fol
 str(planets_good)
 ```
 
-There are two factor variables and 19 numeric variables. The following table briefly describes the variables.
+There are two factor variables and 13 numeric variables. The following table briefly describes the variables.
 
 ```{r, echo = FALSE}
 var_table <- data.frame(variable_names = c("`pl_discmethod`",
                                            "`pl_disc`",
                                            "`pl_locale`",
-                                           "`st_glon`",
-                                           "`st_glat`",
-                                           "`st_elon`",
-                                           "`st_elat`",
                                            "`st_dist`",
                                            "`st_optmag`",
                                            "`st_teff`",
@@ -61,10 +69,6 @@ var_table <- data.frame(variable_names = c("`pl_discmethod`",
                         variable_descriptions = c("Method of discovery (RadialVelocity, Transit, TransitTimingVariations, etc.)",
                                                   "Year of discovery",
                                                   "Locale of discovery (Ground, MultipleLocales or Space)",
-                                                  "Galactic longitude (degrees)",
-                                                  "Galactic latitude (degrees)",
-                                                  "Ecliptic longitude (degrees)",
-                                                  "Ecliptic latitude (degrees)",
                                                   "Stellar distance (parsecs)",
                                                   "Stellar apparent magnitude (mag)",
                                                   "Stellar effective temperature (Kelvin)",
@@ -85,12 +89,20 @@ knitr::kable(var_table,
              align = c('l', 'l'))
 ```
 
+Some of these variables may be collinear to each other. We can inspect for collinearity visually using a matrix of scatterplots of the variables.
+
+```{r, echo = FALSE, fig.height=24, fig.width=24}
+pairs(planets_good, col = "dodgerblue")
+```
+
+From the matrix of scatterplots, it appears that planet orbital period (`pl_orbper`) and orbital semi-major axis (`pl_orbsmax`) are collinear. This collinearity is not unexpected since orbital period and semi-major axis are related to each other physically as supported in Kepler's third law of planetary motion. It also appears that stellar radius (`st_rad`) and stellar surface gravity (`st_logg`) are collinear as well. Collinearity makes estimating model coefficients and interpreting models more difficult, but it does not affect model predictions. We will keep this in mind as we search for potential models for our data.
+
 ### Model search ###
 
 The response for which we are most interested for the study exoplanet habitability is planet orbital semi-major axis (`pl_orbsmax`).
 
 ```{r}
-n <- (2^12) * (3^5)
+n <- (2^8) * (3^5)
 loocv_rmse_results <- rep(0, n)
 adj_r2_results <- rep(0, n)
 bp_value_results <- rep(0, n)
@@ -106,43 +118,31 @@ i <- 1
 for (ipl_discmethod in c("1", "pl_discmethod")) {
   for (ipl_disc in c("1", "pl_disc")) {
     for (ipl_locale in c("1", "pl_locale")) {
-      for (ist_glon in c("1", "st_glon")) {
-        for (ist_glat in c("1", "st_glat")) {
-          for (ist_elon in c("1", "st_elon")) {
-            for (ist_elat in c("1", "st_elat")) {
-              for (ist_dist in c("1", "st_dist", "log(st_dist)")) {
-                for (ist_optmag in c("1", "st_optmag")) {
-                  for (ist_teff in c("1", "st_teff", "log(st_teff)")) {
-                    for (ist_mass in c("1", "st_mass", "log(st_mass)")) {
-                      for (ist_rad in c("1", "st_rad", "log(st_rad)")) {
-                        for (ist_logg in c("1", "st_logg")) {
-                          for (ist_metfe in c("1", "st_metfe")) {
-                            for (ist_vsini in c("1", "st_vsini")) {
-                              for (ipl_orbeccen in c("1", "pl_orbeccen")) {
-                                for (ipl_bmasse in c("1", "pl_bmasse", "log(pl_bmasse)")) {
-                                  lm_str[i] <- paste(ipl_discmethod,
-                                                     ipl_disc,
-                                                     ipl_locale,
-                                                     ist_glon,
-                                                     ist_glat,
-                                                     ist_elon,
-                                                     ist_elat,
-                                                     ist_dist,
-                                                     ist_optmag,
-                                                     ist_teff,
-                                                     ist_mass,
-                                                     ist_rad,
-                                                     ist_logg,
-                                                     ist_metfe,
-                                                     ist_vsini,
-                                                     ipl_orbeccen,
-                                                     ipl_bmasse,
-                                                     sep = "+")
-                                  i <- i + 1
-                                }
-                              }
-                            }
-                          }
+      for (ist_dist in c("1", "st_dist", "log(st_dist)")) {
+        for (ist_optmag in c("1", "st_optmag")) {
+          for (ist_teff in c("1", "st_teff", "log(st_teff)")) {
+            for (ist_mass in c("1", "st_mass", "log(st_mass)")) {
+              for (ist_rad in c("1", "st_rad", "log(st_rad)")) {
+                for (ist_logg in c("1", "st_logg")) {
+                  for (ist_metfe in c("1", "st_metfe")) {
+                    for (ist_vsini in c("1", "st_vsini")) {
+                      for (ipl_orbeccen in c("1", "pl_orbeccen")) {
+                        for (ipl_bmasse in c("1", "pl_bmasse", "log(pl_bmasse)")) {
+                          lm_str[i] <- paste(ipl_discmethod,
+                                             ipl_disc,
+                                             ipl_locale,
+                                             ist_dist,
+                                             ist_optmag,
+                                             ist_teff,
+                                             ist_mass,
+                                             ist_rad,
+                                             ist_logg,
+                                             ist_metfe,
+                                             ist_vsini,
+                                             ipl_orbeccen,
+                                             ipl_bmasse,
+                                             sep = "+")
+                          i <- i + 1
                         }
                       }
                     }
