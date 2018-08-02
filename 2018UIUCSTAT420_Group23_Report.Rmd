@@ -11,33 +11,174 @@ urlcolor: cyan
 
 ## Introduction ##
 
-### Motivation ###
-
 Are we alone in the Universe? This is one of the most profound questions that humankind has sought to answer since the beginning of recorded history. We can gain some insight into this mystery with the modern search for exoplanets. The underlying purpose of contemporary exoplanet programs is to discover habitable planets, especially around nearby stars, and find evidence of life elsewhere in the cosmos. Using Earth and its lifeforms as a template to assess habitability, we seek other celestial bodies with conditions similar to our own, i.e., with Earth-like surface gravities and temperatures where liquid water could exist. In order to meet these criteria, most habitable worlds must be a particular mass and a particular distance from their host star. We are interested in analyzing the data for confirmed exoplanets to asses our progress in finding a planet with similar physical characteristics to Earth.
 
 For our investigation, we used data from the NASA Exoplanet Archive, which can be found at the following URL [https://exoplanetarchive.ipac.caltech.edu](https://exoplanetarchive.ipac.caltech.edu). This archive is an online compilation, collation, and cross-correlation of astronomical data and information on exoplanets and their host stars. The data are vetted by a team of astronomers at the California Institute of Technology (Caltech) under contract with the National Aeronautics and Space Administration (NASA) under the Exoplanet Exploration Program. An extensive overview of the data, services and tools of the archive can be found in a published paper by Akeson, et al. (2013, PASP, 125, 989) in the Publications of the Astronomical Society of the Pacific (PASP). This publication can be found [here](http://adsabs.harvard.edu/abs/2013PASP..125..989A).
 
-We downloaded our dataset from the NASA Exoplanet Archive on 2018 July 5. The data consists of 354 columns and 3,748 rows with information on confirmed exoplanets and their host stars as well as information about their discovery. Discovery information includes the method used to detect the exoplanet, the locale of the observatories used for detection (i.e., whether ground-based, space-based, or a mixture of both observations were used for detection), and the year of discovery. Physical characteristics of exoplanets present in the archive include planetary mass, orbital period, and orbital semi-major axis. Physical properties of host stars listed in the archive include stellar mass, stellar radius, effective temperature, surface gravity, spectral type, luminosity, and distance from Earth. These physical properties for both exoplanets and their host stars are important for determining the similarity between an exoplanet and Earth, and their detection sensitivity.
+We downloaded our dataset from the NASA Exoplanet Archive on 2018 July 5. The data consists of 354 columns and 3,748 rows of information on confirmed exoplanets and their host stars as well as information about their discovery. Discovery information includes the method used to detect the exoplanet, the locale of the observatories used for detection (i.e., whether ground-based, space-based, or a mixture of both observations were used for detection), and the year of discovery. Physical characteristics of exoplanets present in the archive include planetary mass, orbital period, and orbital semi-major axis. Physical properties of host stars listed in the archive include stellar mass, stellar radius, effective temperature, surface gravity, spectral type, luminosity, and distance from Earth. These physical properties for both exoplanets and their host stars are important for determining the similarity between an exoplanet and Earth, and their detection sensitivity.
 
-We trimmed and removed space characters from the original dataset from the NASA Exoplanet Archive to the 37 columns that are most relevant and directly related to habitable planets. These data are stored in the file `planets_lite_ns.csv`. The variables for which we are interested as responses are `pl_bmasse`, `pl_orbsmax` and `st_dist` are the planet mass in Earth masses ($R_\odot = 5.9722 \times 10^{24}\,\rm{kg}$), the planet orbital semi-major axis in astronomical units ($\rm{AU} = 1.495978707 \times 10^{11}\,\rm{m}$), and the distance from our solar system to the exoplanet system in parsecs ($\rm{pc} = 3.0857 \times 10^{16}\,\rm{m}$). These response variables are key physical parameters that determine the habitability of a planet and the potential feasibility of reaching such a planet.
+We trimmed and removed space characters from the original dataset from the NASA Exoplanet Archive to the 19 columns that are most relevant and directly related to habitable planets. These data are stored in the file `planets.csv`. The variables for which we are interested as responses are `pl_bmasse`, `pl_orbsmax` and `st_dist` are the planet mass in Earth masses ($R_\odot = 5.9722 \times 10^{24}\,\rm{kg}$), the planet orbital semi-major axis in astronomical units ($\rm{AU} = 1.495978707 \times 10^{11}\,\rm{m}$), and the distance from our solar system to the exoplanet system in parsecs ($\rm{pc} = 3.0857 \times 10^{16}\,\rm{m}$). These response variables are key physical parameters that determine the habitability of a planet and the potential feasibility of reaching such a planet.
 
 ## Methods ##
+
+### Data cleansing and description ###
+
+To ensure we had a consistent dataset with no empty values for any responses or predictors for which we were considering, we filtered out rows with any empty values and were left with 594 rows.
+
+```{r}
+planets <- read.csv("planets.csv")
+planets_good <- planets[complete.cases(planets), ]
+```
+
+The structure of the `R` object for which we will perform our analysis is as follows.
+
+```{r}
+str(planets_good)
+```
+
+There are two factor variables and 19 numeric variables. The following table briefly describes the variables.
+
+```{r, echo = FALSE}
+var_table <- data.frame(variable_names = c("`pl_discmethod`",
+                                           "`pl_disc`",
+                                           "`pl_locale`",
+                                           "`st_glon`",
+                                           "`st_glat`",
+                                           "`st_elon`",
+                                           "`st_elat`",
+                                           "`st_dist`",
+                                           "`st_optmag`",
+                                           "`st_teff`",
+                                           "`st_mass`",
+                                           "`st_rad`",
+                                           "`st_logg`",
+                                           "`st_metfe`",
+                                           "`st_vsini`",
+                                           "`pl_orbper`",
+                                           "`pl_orbsmax`",
+                                           "`pl_orbeccen`",
+                                           "`pl_bmasse`"),
+                        variable_descriptions = c("Method of discovery (RadialVelocity, Transit, TransitTimingVariations, etc.)",
+                                                  "Year of discovery",
+                                                  "Locale of discovery (Ground, MultipleLocales or Space)",
+                                                  "Galactic longitude (degrees)",
+                                                  "Galactic latitude (degrees)",
+                                                  "Ecliptic longitude (degrees)",
+                                                  "Ecliptic latitude (degrees)",
+                                                  "Stellar distance (parsecs)",
+                                                  "Stellar apparent magnitude (mag)",
+                                                  "Stellar effective temperature (Kelvin)",
+                                                  "Stellar mass (solar masses)",
+                                                  "Stellar radius (solar radii)",
+                                                  "Stellar surface gravity (log g)",
+                                                  "Stellar metallicity (log(Fe/H or M/H))",
+                                                  "Stellar projected rotational velocity (m/s)",
+                                                  "Planet orbital period (days)",
+                                                  "Planet orbital semi-major axis (AU)",
+                                                  "Planet orbital eccentricity",
+                                                  "Planet mass (Earth masses)")
+)
+knitr::kable(var_table,
+             "markdown",
+             row.names = FALSE,
+             col.names = c("Variable name", "Variable description"),
+             align = c('l', 'l'))
+```
+
+### Model search ###
+
+The response for which we are most interested for the study exoplanet habitability is planet orbital semi-major axis (`pl_orbsmax`).
+
+```{r}
+n <- (2^12) * (3^5)
+loocv_rmse_results <- rep(0, n)
+adj_r2_results <- rep(0, n)
+bp_value_results <- rep(0, n)
+sw_value_results <- rep(0, n)
+num_params_results <- rep(0, n)
+```
+
+```{r, eval = FALSE}
+lm_str_head <- "m=lm(log(pl_orbsmax)~"
+lm_str_tail <- ",data=p)"
+lm_str <- rep("", n)
+i <- 1
+for (ipl_discmethod in c("1", "pl_discmethod")) {
+  for (ipl_disc in c("1", "pl_disc")) {
+    for (ipl_locale in c("1", "pl_locale")) {
+      for (ist_glon in c("1", "st_glon")) {
+        for (ist_glat in c("1", "st_glat")) {
+          for (ist_elon in c("1", "st_elon")) {
+            for (ist_elat in c("1", "st_elat")) {
+              for (ist_dist in c("1", "st_dist", "log(st_dist)")) {
+                for (ist_optmag in c("1", "st_optmag")) {
+                  for (ist_teff in c("1", "st_teff", "log(st_teff)")) {
+                    for (ist_mass in c("1", "st_mass", "log(st_mass)")) {
+                      for (ist_rad in c("1", "st_rad", "log(st_rad)")) {
+                        for (ist_logg in c("1", "st_logg")) {
+                          for (ist_metfe in c("1", "st_metfe")) {
+                            for (ist_vsini in c("1", "st_vsini")) {
+                              for (ipl_orbeccen in c("1", "pl_orbeccen")) {
+                                for (ipl_bmasse in c("1", "pl_bmasse", "log(pl_bmasse)")) {
+                                  lm_str[i] <- paste(ipl_discmethod,
+                                                     ipl_disc,
+                                                     ipl_locale,
+                                                     ist_glon,
+                                                     ist_glat,
+                                                     ist_elon,
+                                                     ist_elat,
+                                                     ist_dist,
+                                                     ist_optmag,
+                                                     ist_teff,
+                                                     ist_mass,
+                                                     ist_rad,
+                                                     ist_logg,
+                                                     ist_metfe,
+                                                     ist_vsini,
+                                                     ipl_orbeccen,
+                                                     ipl_bmasse,
+                                                     sep = "+")
+                                  i <- i + 1
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+```{r, eval = FALSE}
+for (i in 2:n) {
+  if ( 0 == i %% 10000) {
+    print(i)
+  }
+  
+  eval(parse(text = paste(lm_str_head, lm_str[i], lm_str_tail)))
+  
+  loocv_rmse_results[i] <- get_loocv_rmse(m)
+  adj_r2_results[i] <- get_adj_r2(m)
+  bp_value_results[i] <- bptest(m)$p.value
+  sw_value_results[i] <- shapiro.test(resid(m))$p.value
+  num_params_results[i] <- get_num_params(m)
+}
+```
 
 ## Results ##
 
 ## Discussion ##
 
 ## Appendix ##
-
-
-The first few values of the response variables of interest are provided below.
-
-```{r}
-planets = read.csv("planets_lite_ns.csv")
-head(planets$pl_bmasse[complete.cases(planets$pl_bmasse)])
-head(planets$pl_orbsmax[complete.cases(planets$pl_orbsmax)])
-head(planets$st_dist[complete.cases(planets$st_dist)])
-```
 
 ```{r}
 library(lmtest)
@@ -62,101 +203,5 @@ get_loocv_rmse = function(model) {
 
 get_adj_r2 = function(model) {
   summary(model)$adj.r.squared
-}
-```
-
-```{r}
-planets_good_idx = complete.cases(planets$st_dist, planets$st_optmag, planets$st_teff, planets$st_mass, planets$st_rad, planets$st_logg, planets$st_metfe, planets$st_vsini, planets$pl_orbsmax, planets$pl_orbeccen, planets$pl_bmasse)
-planets_good_col = c("pl_discmethod", "pl_disc", "pl_locale", "ra", "dec", "st_glon", "st_glat", "st_elon", "st_elat", "st_dist", "st_optmag", "st_teff", "st_mass", "st_rad", "st_logg", "st_lum", "st_metfe", "st_vsini", "pl_orbper", "pl_orbsmax", "pl_orbeccen", "pl_bmasse")
-p = planets[planets_good_idx, planets_good_col]
-```
-
-```{r}
-n <- (2^8) * (3^5)
-loocv_rmse_results <- rep(0, n)
-adj_r2_results <- rep(0, n)
-bp_value_results <- rep(0, n)
-sw_value_results <- rep(0, n)
-num_params_results <- rep(0, n)
-```
-
-```{r, eval = FALSE}
-lm_str_head <- "m=lm(log(st_dist)~"
-lm_str_tail <- ",data=p)"
-lm_str <- rep("", n)
-i <- 1
-for (ipl_discmethod in c("1", "pl_discmethod")) {
-  for (ipl_disc in c("1", "pl_disc")) {
-    for (ipl_locale in c("1", "pl_locale")) {
-#      for (ist_glon in c("1", "st_glon")) {
-#        for (ist_glat in c("1", "st_glat")) {
-#          for (ist_elon in c("1", "st_elon")) {
-#            for (ist_elat in c("1", "st_elat")) {
-              for (ist_optmag in c("1", "st_optmag")) {
-                for (ist_teff in c("1", "st_teff", "log(st_teff)")) {
-                  for (ist_mass in c("1", "st_mass", "log(st_mass)")) {
-                    for (ist_rad in c("1", "st_rad", "log(st_rad)")) {
-                      for (ist_logg in c("1", "st_logg")) {
-                        for (ist_metfe in c("1", "st_metfe")) {
-                          for (ist_vsini in c("1", "st_vsini")) {
-#                            for (ipl_orbper in c("1", "pl_orbper", "log(pl_orbper)")) {
-                              for (ipl_orbsmax in c("1", "pl_orbsmax", "log(pl_orbsmax)")) {
-                                for (ipl_orbeccen in c("1", "pl_orbeccen")) {
-                                  for (ipl_bmasse in c("1", "pl_bmasse", "log(pl_bmasse)")) {
-#                                  for (ist_dist in c("1", "st_dist", "log(st_dist)")) {
-                                    lm_str[i] <- paste(ipl_discmethod,
-                                                       ipl_disc,
-                                                       ipl_locale,
-#                                                       ist_glon,
-#                                                       ist_glat,
-#                                                       ist_elon,
-#                                                       ist_elat,
-                                                       ist_optmag,
-                                                       ist_teff,
-                                                       ist_mass,
-                                                       ist_rad,
-                                                       ist_logg,
-                                                       ist_metfe,
-                                                       ist_vsini,
-#                                                       ipl_orbper,
-                                                       ipl_orbsmax,
-                                                       ipl_orbeccen,
-ipl_bmasse,
-#                                                       ist_dist,
-                                                       sep = "+")
-                                    i <- i + 1
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-#        }
-#      }
-#    }
-#  }
-#}
-```
-
-```{r, eval = FALSE}
-for (i in 2:n) {
-  if ( 0 == i %% 10000) {
-    print(i)
-  }
-  
-  eval(parse(text = paste(lm_str_head, lm_str[i], lm_str_tail)))
-  
-  loocv_rmse_results[i] <- get_loocv_rmse(m)
-  adj_r2_results[i] <- get_adj_r2(m)
-  bp_value_results[i] <- bptest(m)$p.value
-  sw_value_results[i] <- shapiro.test(resid(m))$p.value
-  num_params_results[i] <- get_num_params(m)
 }
 ```
